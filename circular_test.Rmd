@@ -1,0 +1,57 @@
+---
+title: "Circular regression Test"
+author: "kotsubo takuto"
+#date: "2018年2月8日"
+output: 
+    html_document:
+      md_extensions: -ascii_identifiers
+      toc: true
+      toc_depth: 3
+---
+
+```{r option, echo=FALSE, cache=FALSE, warning=FALSE}
+library(knitr)
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=TRUE,
+               #cache = TRUE, # 現状大きな計算はしていないので
+	             prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+```{r,echo=FALSE}
+library(dplyr)
+library(tidyverse)
+library(pipeR)
+library(lubridate)
+library(circular)
+```
+
+# circular-circular regression model
+
+We use the package "circular" and test circular regression functions. This package is reffer to "Topics in circular Statistics". 
+
+```{r}
+x <- circular(runif(50,0,2*pi))
+y <- atan2(0.15*cos(x) + 0.25*sin(x), 0.35*sin(x)) + rvonmises(n=50, mu=circular(0), kappa = 5)
+circ.lm <- lm.circular(y,x,order = 1)
+plot.default(x,y)
+circ.lm$fitted[circ.lm$fitted>pi] <- circ.lm$fitted[circ.lm$fitted>pi] - 2*pi # 範囲を変換する
+points.default(x[order(x)], circ.lm$fitted[order(x)], type='l')
+```
+
+# circular-linear regression model
+
+"x" and "y" length differ ??
+
+```{r}
+set.seed(1234)
+x <- cbind(rnorm(10), rep(1, 10))
+y <- circular(2*atan(c(x%*%c(5,1))))+rvonmises(10, mu=circular(0), kappa=100)
+lm.circular(y=y, x=x, init=c(5,1), type='c-l', verbose=TRUE)
+```
+
