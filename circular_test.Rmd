@@ -52,6 +52,6 @@ points.default(x[order(x)], circ.lm$fitted[order(x)], type='l')
 set.seed(1234)
 x <- cbind(rnorm(10), rep(1, 10))
 y <- circular(2*atan(c(x%*%c(5,1))))+rvonmises(10, mu=circular(0), kappa=100)
-lm.circular(y=y, x=x, init=c(5,1), type='c-l', verbose=TRUE)
+circ.lm <- lm.circular(y=y, x=x, init=c(5,1), type='c-l', verbose=TRUE)
 ```
 
