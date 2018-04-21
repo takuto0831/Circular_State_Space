@@ -1,0 +1,132 @@
+---
+title: "circular regression simulate"
+author: "kotsubo takuto"
+date: "`r Sys.Date()`"
+output: 
+    html_document:
+      md_extensions: -ascii_identifiers
+      toc: true
+      toc_depth: 3
+---
+
+```{r option, echo=FALSE, cache=FALSE, warning=FALSE}
+library(knitr)
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=TRUE,
+               #cache = TRUE, # 現状大きな計算はしていないので
+	             prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+```{r,echo=FALSE}
+library(dplyr)
+library(tidyverse)
+library(pipeR)
+library(lubridate)
+library(circular)
+```
+
+# circular regression model
+
+以下の式で, 表されるcircular regression modelによる時系列データを生成する.
+
+$$
+\left(
+  \begin{array}{c}
+    \cos \theta_t \\
+    \sin \theta_t
+  \end{array}
+\right) =
+\left(
+  \begin{array}{c}
+    \alpha_{c,0} \\
+    \alpha_{s,0}
+  \end{array} 
+\right) +
+\left(
+  \begin{array}{cc}
+    \beta_{c,1,1} & \beta_{c,1,2} \\
+    \beta_{s,1,1} & \beta_{s,1,2}
+  \end{array}
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-1} \\
+    \sin \theta_{t-1}
+  \end{array} 
+\right) +
+\left(
+  \begin{array}{cc}
+    \beta_{c,2,1} & \beta_{c,2,2} \\
+    \beta_{s,2,1} & \beta_{s,2,2}
+  \end{array} 
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-2} \\
+    \sin \theta_{t-2}
+  \end{array} 
+\right) \\ + \cdots +
+\left(
+  \begin{array}{cc}
+    \beta_{c,p,1} & \beta_{c,p,2} \\
+    \beta_{s,p,1} & \beta_{s,p,2}
+  \end{array}
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-p} \\
+    \sin \theta_{t-p}
+  \end{array} 
+\right) +
+\left(  
+  \begin{array}{c}
+    \varepsilon_{c,t} \\
+    \varepsilon_{s,t}
+  \end{array}
+\right)
+$$
+
+式中の説明, $\varepsilon$
+
+$$
+\left(
+  \begin{array}{c}
+    \varepsilon_{c,t} \\
+    \varepsilon_{s,t}
+  \end{array} 
+\right) \sim 
+N 
+\left(
+  \left(
+    \begin{array}{c}
+      0 \\
+      0
+    \end{array}
+  \right),
+  \left(
+    \begin{array}{cc}
+      \sigma_c^2 & \rho \sigma_c \sigma_s \\
+      \rho \sigma_c \sigma_s & \sigma_s^2
+    \end{array}
+  \right)
+\right)
+$$
+
+
+
+
+
+
+
+
+
+
+
+
+
