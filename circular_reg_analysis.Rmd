@@ -1,0 +1,68 @@
+---
+title: "Circular regression Test"
+author: "kotsubo takuto"
+#date: "2018年2月8日"
+output: 
+    html_document:
+      md_extensions: -ascii_identifiers
+      toc: true
+      toc_depth: 3
+---
+
+```{r option, echo=FALSE, cache=FALSE, warning=FALSE}
+library(knitr)
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=TRUE,
+               #cache = TRUE, # 現状大きな計算はしていないので
+	             prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+```{r,echo=FALSE}
+library(dplyr)
+library(tidyverse)
+library(pipeR)
+library(lubridate)
+library(circular)
+library(readr)
+```
+
+# データ準備
+
+## データ読み込み
+
+```{r}
+col_names <- c("data","wind","info1","info2")
+data <- read_csv("csv/nerima_wind.csv",col_names = col_names,skip=6,locale=locale(encoding='Shift_JIS'))
+glimpse(data)
+```
+
+## データ整形
+
+風向データが16方位で与えられているので, 角度データに変更する. その際, 東を0度, 北を90度とする.
+
+```{r}
+data %>% 
+  mutate(theta = ifelse(wind == "東",0,
+                        ifelse(wind == "東北東",22.5,
+                               ifelse(wind == "北東",45,
+                                      ifelse(wind == "北北東",67.5,
+                                             ifelse(wind == "北",90,
+                                                    ifelse(wind == "北北西",112.5,
+                                                           ifelse(wind == "北西",135,
+                                                                  ifelse(wind == "西北西",157.5,
+                                                                         ifelse(wind == "西",180,
+                                                                                ifelse(wind == "西南西",202.5,
+                                                                                       ifelse(wind == "南西",225,
+                                                                                              ifelse(wind == "南南西",247.5,
+                                                                                                     ifelse(wind == "南",270,
+                                                                                                            ifelse(wind == "南南東",292.5,
+                                                                                                                   ifelse(wind == "南東", 315,337.5)))))))))))))))) -> data
+```
+
+
