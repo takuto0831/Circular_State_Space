@@ -15,7 +15,7 @@ CircularRegSim <- function(theta_start_vec, len, alpha, Beta, Eps){
     for(j in 1:lag){
       tmp = tmp + (beta[,,j] %*% d[,i-lag])
     }
-    d[,i] = alpha + tmp + mvrnorm(1,mu,Eps)
+    d[,i] = alpha + tmp + as.matrix(mvrnorm(1,mu,Eps))
   }
   return(d)
 }
