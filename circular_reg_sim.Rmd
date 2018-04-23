@@ -29,6 +29,10 @@ library(tidyverse)
 library(pipeR)
 library(lubridate)
 library(circular)
+library(foreach)
+library(MASS)
+library(DT)
+source('~/Desktop/circular_reg/script/function.R')
 ```
 
 # circular regression model
@@ -92,7 +96,7 @@ $$
 \right)
 $$
 
-式中の説明, $\varepsilon$
+式中の説明, $\bf \varepsilon$
 
 $$
 \left(
@@ -118,13 +122,52 @@ N
 \right)
 $$
 
+# Generate simulation data
 
+パラメータは, 
 
+$$ \alpha_{c,0}, \alpha_{s,0}, \left(
+  \begin{array}{cc}
+    \beta_{c,1,1} & \beta_{c,1,2} \\
+    \beta_{s,1,1} & \beta_{s,1,2}
+  \end{array}
+\right), \cdots , \left(
+  \begin{array}{cc}
+    \beta_{c,p,1} & \beta_{c,p,2} \\
+    \beta_{s,p,1} & \beta_{s,p,2}
+  \end{array}
+\right), \sigma_c, \sigma_s, \rho $$
 
+であり, 以下のように定義する. ここで$p=2$とする.
 
+```{r parameter setting}
+# model parameter
+alpha <- matrix(c(0,0), nrow = 2)
+beta <- array(c(0.5,0,0,0.5,
+                0.25,0,0,0.25),dim = c(2,2,2))
+Eps <- GeneratingEps(sigma_c=1, sigma_s=1, rho=0.5)
 
+# Simulation parameter
+theta_start_vec <- c(0,0) # 初期値
+len <- 100 # 返す乱数列の長さ(初期値も含む)
+```
 
+パラメーターを元に, シミューレションデータを生成する.
 
+```{r}
+Sim_data <- CircularRegSim(theta_start_vec,len,alpha,beta,Eps)
+Sim_data %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  DT::datatable(rownames = FALSE,
+                colnames = c("cos(theta)","sin(theta)"))
+```
+
+$- 1 \leq \cos \theta, \sin \theta \leq 1$を全然満たしていない...
+
+```{r}
+
+```
 
 
 
