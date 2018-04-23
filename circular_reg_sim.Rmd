@@ -1,5 +1,5 @@
 ---
-title: "circular regression simulate"
+title: "Circular Regression Simulate"
 author: "kotsubo takuto"
 date: "`r Sys.Date()`"
 output: 
@@ -32,10 +32,10 @@ library(circular)
 library(foreach)
 library(MASS)
 library(DT)
-source('~/Desktop/circular_reg/script/function.R')
+source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
 ```
 
-# circular regression model
+# Circular regression model
 
 以下の式で, 表されるcircular regression modelによる時系列データを生成する.
 
@@ -96,7 +96,13 @@ $$
 \right)
 $$
 
-式中の説明, $\bf \varepsilon$
+式中の説明, $\boldsymbol{\varepsilon} = 
+\left(  
+  \begin{array}{c}
+    \varepsilon_{c,t} \\
+    \varepsilon_{s,t}
+  \end{array}
+\right)$の定義
 
 $$
 \left(
@@ -152,7 +158,7 @@ theta_start_vec <- c(0,0) # 初期値
 len <- 100 # 返す乱数列の長さ(初期値も含む)
 ```
 
-パラメーターを元に, シミューレションデータを生成する.
+パラメーターを元に, シミューレーションデータを生成する.
 
 ```{r}
 Sim_data <- CircularRegSim(theta_start_vec,len,alpha,beta,Eps)
@@ -163,12 +169,22 @@ Sim_data %>%
                 colnames = c("cos(theta)","sin(theta)"))
 ```
 
-$- 1 \leq \cos \theta, \sin \theta \leq 1$を全然満たしていない...
+$- 1 \leq \cos \theta, \sin \theta \leq 1$を全然満たしていない.
+
+単位円ではなく, 半径$r$上に存在すると考えると, $\arctan(r\sin\theta/r \cos\theta) = \theta$で求められる??
 
 ```{r}
-
+Sim_data %>% 
+  t() %>% 
+  as.data.frame() %>%
+  rename(cos=V1,sin=V2) %>% 
+  mutate(theta = atan2(sin,cos)) -> Sim_data
 ```
 
+```{r}
+Sim_data %>% 
+  DT::datatable()
+```
 
 
 
