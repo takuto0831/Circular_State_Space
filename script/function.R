@@ -1,21 +1,23 @@
 # シミュレーションデータを生成する関数
-CircularRegSim <- function(theta_start_vec, len, alpha, Beta, Eps){
-  #theta_vec:Angle data, alpha:(2,1), Beta:(2,2,lag)
+CircularRegSim <- function(theta_start_vec, len, alpha, beta, Eps){
+  #theta_vec:Angle data, alpha:(2,1), beta:(2,2,lag)
   lag <- length(theta_start_vec)
-  d <- matrix(nrow = 2, ncol = len) 
   mu <- matrix(c(0,0),nrow = 2)
+  d <- matrix(nrow = 3, ncol = len) 
   
   # 初期値を行列dに格納する.
   for(i in 1:lag){
-    d[1,i] = cos(theta_start_vec[i])
-    d[2,i] = sin(theta_start_vec[i])
+    d[1,i] = i # 次数
+    d[2,i] = cos(theta_start_vec[i])
+    d[3,i] = sin(theta_start_vec[i])
   }
   for (i in seq(lag+1,len,1)){
     tmp <- matrix(c(0,0),nrow = 2)
     for(j in 1:lag){
-      tmp = tmp + (beta[,,j] %*% d[,i-lag])
+      tmp = tmp + (beta[,,j] %*% d[2:3,i-lag])
     }
-    d[,i] = alpha + tmp + as.matrix(mvrnorm(1,mu,Eps))
+    d[1,i] = i
+    d[2:3,i] = alpha + tmp + as.matrix(mvrnorm(1,mu,Eps))
   }
   return(d)
 }

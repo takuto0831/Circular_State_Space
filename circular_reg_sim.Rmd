@@ -32,6 +32,7 @@ library(circular)
 library(foreach)
 library(MASS)
 library(DT)
+library(ggthemes)
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
 ```
 
@@ -161,31 +162,54 @@ len <- 100 # 返す乱数列の長さ(初期値も含む)
 パラメーターを元に, シミューレーションデータを生成する.
 
 ```{r}
+CircularRegSim # 関数
+```
+
+```{r}
 Sim_data <- CircularRegSim(theta_start_vec,len,alpha,beta,Eps)
 Sim_data %>% 
   t() %>% 
   as.data.frame() %>% 
   DT::datatable(rownames = FALSE,
-                colnames = c("cos(theta)","sin(theta)"))
+                colnames = c("p","cos(theta)","sin(theta)"))
 ```
 
 $- 1 \leq \cos \theta, \sin \theta \leq 1$を全然満たしていない.
 
-単位円ではなく, 半径$r$上に存在すると考えると, $\arctan(r\sin\theta/r \cos\theta) = \theta$で求められる??
+単位円ではなく, 半径$r$上に存在すると考えると, $\arctan(r\sin\theta/r \cos\theta) = \theta$で求められる?? (link function??)
 
 ```{r}
 Sim_data %>% 
   t() %>% 
   as.data.frame() %>%
-  rename(cos=V1,sin=V2) %>% 
+  rename(p=V1, cos=V2, sin=V3) %>% 
   mutate(theta = atan2(sin,cos)) -> Sim_data
 ```
 
 ```{r}
 Sim_data %>% 
-  DT::datatable()
+  DT::datatable(rownames = FALSE)
 ```
 
+# Time Series Plot
 
+Sim_dataにおける, `theta`, `sin`, `cos`について時系列データとして見てみる.
+
+```{r}
+Sim_data %>% 
+  ggplot(aes(x=p,y=theta)) +
+   geom_line() + 
+   theme_economist() +
+   labs(title = "time series circular plot")
+```
+
+```{r}
+Sim_data %>% 
+  tidyr::gather(key = "variable",value  = value, cos,sin) %>% 
+  ggplot(aes(x=p,y=value,colour=variable)) +
+   geom_line() + 
+   theme_economist() +
+   labs(title = "time series circular plot")
+```
 
 
