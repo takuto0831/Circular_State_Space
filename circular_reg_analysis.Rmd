@@ -30,39 +30,59 @@ library(pipeR)
 library(lubridate)
 library(circular)
 library(readr)
+library(ggplot2)
+library(ggthemes)
 ```
 
 # データ準備
 
 ## データ読み込み
 
-```{r}
+```{r, eval=FALSE,include=FALSE}
+# 練馬区風向データ 気象庁データより作成
 col_names <- c("data","wind","info1","info2")
 data <- read_csv("csv/nerima_wind.csv",col_names = col_names,skip=6,locale=locale(encoding='Shift_JIS'))
 glimpse(data)
+```
+
+```{r}
+data(wind) # in this dataset we report the wind direction recorded every day from January 29, 2001 to March 31, 2001 from 3.00am to 4.00am included.
+wind %>% 
+  data.frame(p = seq(1,310,1), theta=.) -> wind_data 
+glimpse(wind_data)  
 ```
 
 ## データ整形
 
 風向データが16方位で与えられているので, 角度データに変更する. その際, 東を0度, 北を90度とする.
 
-```{r}
+```{r, eval=FALSE,include=FALSE}
+# 風向データの値を16方位から角度データに変換する.
 data %>% 
   mutate(theta = ifelse(wind == "東",0,
-                        ifelse(wind == "東北東",22.5,
-                               ifelse(wind == "北東",45,
-                                      ifelse(wind == "北北東",67.5,
-                                             ifelse(wind == "北",90,
-                                                    ifelse(wind == "北北西",112.5,
-                                                           ifelse(wind == "北西",135,
-                                                                  ifelse(wind == "西北西",157.5,
-                                                                         ifelse(wind == "西",180,
-                                                                                ifelse(wind == "西南西",202.5,
-                                                                                       ifelse(wind == "南西",225,
-                                                                                              ifelse(wind == "南南西",247.5,
-                                                                                                     ifelse(wind == "南",270,
-                                                                                                            ifelse(wind == "南南東",292.5,
-                                                                                                                   ifelse(wind == "南東", 315,337.5)))))))))))))))) -> data
+                 ifelse(wind == "東北東",22.5,
+                 ifelse(wind == "北東",45,
+                 ifelse(wind == "北北東",67.5,
+                 ifelse(wind == "北",90,
+                 ifelse(wind == "北北西",112.5,
+                 ifelse(wind == "北西",135,
+                 ifelse(wind == "西北西",157.5,
+                 ifelse(wind == "西",180,
+                 ifelse(wind == "西南西",202.5,
+                 ifelse(wind == "南西",225,
+                 ifelse(wind == "南南西",247.5,
+                 ifelse(wind == "南",270,
+                 ifelse(wind == "南南東",292.5,
+                 ifelse(wind == "南東", 315,337.5)))))))))))))))) -> data
+```
+
+## Time Series Plot
+
+```{r}
+ggplot(data = wind_data, mapping = aes(x=p,y=theta)) +
+  geom_line() + 
+   theme_economist() +
+   labs(title = "time series circular plot")
 ```
 
 
