@@ -85,4 +85,11 @@ ggplot(data = wind_data, mapping = aes(x=p,y=theta)) +
    labs(title = "time series circular plot")
 ```
 
+```{r}
+pred_saram <- lm.circular(y = wind_data$theta[3:310], x = wind_data$theta[1:308], type = "c-c")
+# Obtain a crude plot of the data and fitted regression line.
+pred_saram$fitted[pred_saram$fitted>pi] <- pred_saram$fitted[pred_saram$fitted>pi] - 2*pi
+plot.new()
+points.default(x[order(x)], pred_saram$fitted[order(x)], type='l')
+```
 
