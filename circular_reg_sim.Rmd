@@ -97,7 +97,6 @@ $$
 \right)
 $$
 
-
 式中の説明, $\boldsymbol{\varepsilon} = 
 \left(  
   \begin{array}{c}

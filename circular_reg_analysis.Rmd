@@ -32,6 +32,8 @@ library(circular)
 library(readr)
 library(ggplot2)
 library(ggthemes)
+library(vars)
+source('~/Desktop/circular_reg/script/function.R')
 ```
 
 # データ準備
@@ -81,15 +83,67 @@ data %>%
 ```{r}
 ggplot(data = wind_data, mapping = aes(x=p,y=theta)) +
   geom_line() + 
+  theme_economist() +
+  labs(title = "time series circular plot")
+```
+
+```{r}
+wind_data %>% 
+  mutate(cos = cos(theta), sin=sin(theta)) %>% 
+  tidyr::gather(key = "variable",value  = value, cos,sin) %>% 
+  ggplot(aes(x=p,y=value,colour=variable)) +
+   geom_line() + 
    theme_economist() +
    labs(title = "time series circular plot")
 ```
 
+## circular package
+
+数式が Sarma, Y. and Jammalamadaka, S.(1993) に準じている.
+
 ```{r}
-pred_saram <- lm.circular(y = wind_data$theta[3:310], x = wind_data$theta[1:308], type = "c-c")
+pred_saram <- lm.circular(y = wind_data$theta[3:310], x = wind_data$theta[1:308], type = "c-c", order=2)
+pred_saram <- lm.circular(y = wind_data$theta[3:7], x = wind_data$theta[1:5], type = "c-c", order=2)
+
 # Obtain a crude plot of the data and fitted regression line.
 pred_saram$fitted[pred_saram$fitted>pi] <- pred_saram$fitted[pred_saram$fitted>pi] - 2*pi
 plot.new()
 points.default(x[order(x)], pred_saram$fitted[order(x)], type='l')
 ```
+
+`lm.circular`関数はある説明変数のベクトル, 応答変数のベクトルで回帰する. circular.regでは逐次更新していくのでは？？
+
+## Vars
+
+```{r}
+wind_data %>% 
+  mutate(cos = cos(theta),sin = sin(theta)) %>% 
+  select(cos,sin) %>% 
+  VAR(p=2,type="const") -> wind_data_pred
+```
+
+```{r}
+# Generate parameter
+# もっと綺麗に書ける
+Bcoef(wind_data_pred) %>% 
+  as.data.frame() -> alpha
+alpha <- alpha$const %>% as.matrix()
+beta <- Acoef(wind_data_pred) %>% as.array()
+Eps <- summary(wind_data_pred)$covres
+Bcoef(wind_data_pred) -> a
+```
+
+```{r}
+pred <- CircularRegPred(wind_data$theta,2,alpha,beta,Eps)
+```
+
+```{r}
+pred %>% 
+  tidyr::gather(key = "variable",value  = value, cos,sin) %>% 
+  ggplot(aes(x=p,y=value,colour=variable)) +
+   geom_line() + 
+   theme_economist() +
+   labs(title = "time series circular plot")
+```
+
 
