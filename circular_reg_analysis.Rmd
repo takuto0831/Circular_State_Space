@@ -48,7 +48,7 @@ glimpse(data)
 ```
 
 ```{r}
-data(wind) # in this dataset we report the wind direction recorded every day from January 29, 2001 to March 31, 2001 from 3.00am to 4.00am included.
+data(wind) # dataset we report the wind direction recorded every day from January 29, 2001 to March 31, 2001 from 3.00am to 4.00am included.
 wind %>% 
   data.frame(p = seq(1,310,1), theta=.) -> wind_data 
 glimpse(wind_data)  
@@ -81,6 +81,7 @@ data %>%
 ## Time Series Plot
 
 ```{r}
+# theta
 ggplot(data = wind_data, mapping = aes(x=p,y=theta)) +
   geom_line() + 
   theme_economist() +
@@ -88,6 +89,7 @@ ggplot(data = wind_data, mapping = aes(x=p,y=theta)) +
 ```
 
 ```{r}
+# sin, cos
 wind_data %>% 
   mutate(cos = cos(theta), sin=sin(theta)) %>% 
   tidyr::gather(key = "variable",value  = value, cos,sin) %>% 
@@ -99,11 +101,10 @@ wind_data %>%
 
 ## circular package
 
-数式が Sarma, Y. and Jammalamadaka, S.(1993) に準じている.
+数式が Sarma, Y. and Jammalamadaka, S.(1993) に準じている. よくわからないので一旦保留.
 
-```{r}
+```{r,eval=FALSE} 
 pred_saram <- lm.circular(y = wind_data$theta[3:310], x = wind_data$theta[1:308], type = "c-c", order=2)
-pred_saram <- lm.circular(y = wind_data$theta[3:7], x = wind_data$theta[1:5], type = "c-c", order=2)
 
 # Obtain a crude plot of the data and fitted regression line.
 pred_saram$fitted[pred_saram$fitted>pi] <- pred_saram$fitted[pred_saram$fitted>pi] - 2*pi
@@ -111,34 +112,31 @@ plot.new()
 points.default(x[order(x)], pred_saram$fitted[order(x)], type='l')
 ```
 
-`lm.circular`関数はある説明変数のベクトル, 応答変数のベクトルで回帰する. circular.regでは逐次更新していくのでは？？
-
-## Vars
+## Vars package
 
 ```{r}
 wind_data %>% 
-  mutate(cos = cos(theta),sin = sin(theta)) %>% 
-  select(cos,sin) %>% 
+  mutate(cos = cos(theta),sin = sin(theta)) %>%
+  dplyr::select(cos,sin) %>% 
   VAR(p=2,type="const") -> wind_data_pred
 ```
 
 ```{r}
 # Generate parameter
 # もっと綺麗に書ける
-Bcoef(wind_data_pred) %>% 
-  as.data.frame() -> alpha
+alpha <- Bcoef(wind_data_pred) %>% 
+            as.data.frame() 
 alpha <- alpha$const %>% as.matrix()
-beta <- Acoef(wind_data_pred) %>% as.array()
-Eps <- summary(wind_data_pred)$covres
-Bcoef(wind_data_pred) -> a
+beta <- Acoef(wind_data_pred) 
+Eps <- summary(wind_data_pred)$covres %>% matrix(nrow = 2)
 ```
 
 ```{r}
-pred <- CircularRegPred(wind_data$theta,2,alpha,beta,Eps)
+wind_data_hat <- CircularRegPred(wind_data$theta,2,alpha,beta,Eps)
 ```
 
 ```{r}
-pred %>% 
+wind_data_hat %>% 
   tidyr::gather(key = "variable",value  = value, cos,sin) %>% 
   ggplot(aes(x=p,y=value,colour=variable)) +
    geom_line() + 
