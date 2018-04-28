@@ -10,6 +10,7 @@ output:
 ---
 
 ```{r option, echo=FALSE, cache=FALSE, warning=FALSE}
+rm(list = ls())
 library(knitr)
 ## Global options
 options(max.print="75")
@@ -26,6 +27,7 @@ opts_knit$set(width=75)
 ```{r,echo=FALSE}
 library(dplyr)
 library(tidyverse)
+library(tibble)
 library(pipeR)
 library(lubridate)
 library(circular)
@@ -33,6 +35,8 @@ library(readr)
 library(ggplot2)
 library(ggthemes)
 library(vars)
+library(MASS)
+library(DT)
 source('~/Desktop/circular_reg/script/function.R')
 ```
 
@@ -49,8 +53,9 @@ glimpse(data)
 
 ```{r}
 data(wind) # dataset we report the wind direction recorded every day from January 29, 2001 to March 31, 2001 from 3.00am to 4.00am included.
-wind %>% 
-  data.frame(p = seq(1,310,1), theta=.) -> wind_data 
+wind_data <- wind %>%  
+                data.frame(t = seq(1,310,1), theta_real=.) %>%  # put label
+                mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))  
 glimpse(wind_data)  
 ```
 
@@ -80,9 +85,11 @@ data %>%
 
 ## Time Series Plot
 
+元データの時系列$t$に対する, $\theta, \sin \theta, \cos \theta$の値を図示する.
+
 ```{r}
 # theta
-ggplot(data = wind_data, mapping = aes(x=p,y=theta)) +
+ggplot(data = wind_data, mapping = aes(x=t,y=theta_real)) +
   geom_line() + 
   theme_economist() +
   labs(title = "time series circular plot")
@@ -91,9 +98,8 @@ ggplot(data = wind_data, mapping = aes(x=p,y=theta)) +
 ```{r}
 # sin, cos
 wind_data %>% 
-  mutate(cos = cos(theta), sin=sin(theta)) %>% 
-  tidyr::gather(key = "variable",value  = value, cos,sin) %>% 
-  ggplot(aes(x=p,y=value,colour=variable)) +
+  tidyr::gather(key = "variable",value  = value, cos_real,sin_real) %>% 
+  ggplot(aes(x=t,y=value,colour=variable)) +
    geom_line() + 
    theme_economist() +
    labs(title = "time series circular plot")
@@ -101,9 +107,9 @@ wind_data %>%
 
 ## circular package
 
-数式が Sarma, Y. and Jammalamadaka, S.(1993) に準じている. よくわからないので一旦保留.
+circular pacakege の回帰式は, 数式が Sarma, Y. and Jammalamadaka, S.(1993) に準じている. よくわからないので一旦保留.
 
-```{r,eval=FALSE} 
+```{r,eval=FALSE, include=FALSE} 
 pred_saram <- lm.circular(y = wind_data$theta[3:310], x = wind_data$theta[1:308], type = "c-c", order=2)
 
 # Obtain a crude plot of the data and fitted regression line.
@@ -114,34 +120,30 @@ points.default(x[order(x)], pred_saram$fitted[order(x)], type='l')
 
 ## Vars package
 
+多変量ARモデル, とりあえず次数を$p=2$とする.
+
+```{r}
+tmp <- wind_data %>% 
+  dplyr::select(cos_real,sin_real) %>% 
+  VAR(p=2,type="const")
+```
+
+得られた結果から, 必要なパラメータを抽出し, 元データと推定されたパラメータを基に, 予測の時系列を作成する.
+
+```{r generate parameter}
+wind_data <- CircularRegPred_parameter(wind_data$theta_real,tmp,lag = 2) %>% 
+  {mutate(wind_data,cos_pred = .$cos, sin_pred = .$sin)} %>% 
+   mutate(theta_pred = if_else(atan2(sin_pred,cos_pred) > 0, atan2(sin_pred,cos_pred), atan2(sin_pred,cos_pred) + 2*pi))
+DT::datatable(wind_data,rownames = FALSE)
+```
+
 ```{r}
 wind_data %>% 
-  mutate(cos = cos(theta),sin = sin(theta)) %>%
-  dplyr::select(cos,sin) %>% 
-  VAR(p=2,type="const") -> wind_data_pred
-```
-
-```{r}
-# Generate parameter
-# もっと綺麗に書ける
-alpha <- Bcoef(wind_data_pred) %>% 
-            as.data.frame() 
-alpha <- alpha$const %>% as.matrix()
-beta <- Acoef(wind_data_pred) 
-Eps <- summary(wind_data_pred)$covres %>% matrix(nrow = 2)
-```
-
-```{r}
-wind_data_hat <- CircularRegPred(wind_data$theta,2,alpha,beta,Eps)
-```
-
-```{r}
-wind_data_hat %>% 
-  tidyr::gather(key = "variable",value  = value, cos,sin) %>% 
-  ggplot(aes(x=p,y=value,colour=variable)) +
+  tidyr::gather(key = "variable",value  = value, theta_real,theta_pred) %>% 
+  ggplot(aes(x=t,y=value,colour=variable)) +
    geom_line() + 
    theme_economist() +
-   labs(title = "time series circular plot")
+   labs(title = "Time series circular plot")
 ```
 
 

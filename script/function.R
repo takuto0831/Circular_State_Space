@@ -22,7 +22,7 @@ CircularRegSim <- function(theta_start_vec, len, alpha, beta, Eps){
   return(d)
 }
 
-# シミュレーションデータを生成する関数
+# 予測データを生成する関数
 CircularRegPred <- function(vec, lag, alpha, beta, Eps){
   #theta_vec:Angle data, alpha:(2,1), beta:(2,2,lag)
   len <- length(vec)
@@ -48,6 +48,16 @@ CircularRegPred <- function(vec, lag, alpha, beta, Eps){
            as.data.frame() %>%
            rename(p=V1, cos=V2, sin=V3))
 }
+
+CircularRegPred_parameter <- function(theta,tmp,lag){
+  alpha <- Bcoef(tmp) %>% as_data_frame() %>% {as.matrix(.$const)}
+  beta <- Acoef(tmp) 
+  Eps <- summary(tmp)$covres %>% matrix(nrow = 2)
+  CircularRegPred(theta,lag,alpha,beta,Eps) %>% 
+    return()
+} 
+
+
 
 # 正規乱数のパラメータより, 分散共分散行列を計算する関数
 GeneratingEps <- function(sigma_c, sigma_s, rho){
