@@ -13,7 +13,7 @@ output:
 rm(list = ls())
 library(knitr)
 ## Global options
-options(max.print="75")
+options(max.print="75", digits=5)
 opts_chunk$set(echo=TRUE,
                #cache = TRUE, # 現状大きな計算はしていないので
 	             prompt=FALSE,
@@ -128,11 +128,56 @@ tmp <- wind_data %>%
   VAR(p=2,type="const")
 ```
 
+```{r}
+summary(tmp) # 結果の確認
+```
+
+
 得られた結果から, 必要なパラメータを抽出し, 元データと推定されたパラメータを基に, 予測の時系列を作成する.
 
 ```{r generate parameter}
 wind_data <- CircularRegPred_parameter(wind_data$theta_real,tmp,lag = 2) %>% 
-  {mutate(wind_data,cos_pred = .$cos, sin_pred = .$sin)} %>% 
+   {mutate(wind_data,cos_pred = .$cos, sin_pred = .$sin)} %>% 
+   mutate(theta_pred = if_else(atan2(sin_pred,cos_pred) > 0, atan2(sin_pred,cos_pred), atan2(sin_pred,cos_pred) + 2*pi))
+DT::datatable(wind_data,rownames = FALSE,options = list())
+```
+
+```{r}
+wind_data %>% 
+  tidyr::gather(key = "variable",value  = value, theta_real,theta_pred) %>% 
+  ggplot(aes(x=t,y=value,colour=variable)) +
+   geom_line() + 
+   theme_economist() +
+   labs(title = "Time series circular plot")
+```
+
+```{r}
+# sin, cos
+wind_data %>% 
+  tidyr::gather(key = "variable",value  = value, cos_pred,sin_pred) %>% 
+  ggplot(aes(x=t,y=value,colour=variable)) +
+   geom_line() + 
+   theme_economist() +
+   labs(title = "time series circular plot")
+```
+
+# vars  package lag select
+
+`VAR`関数の`lag.max`を用いて, 最大次数を5として, 次数選択を行う. 次数は3が選択された.
+
+```{r}
+tmp <- wind_data %>% 
+  dplyr::select(cos_real,sin_real) %>% 
+  VAR(type="const", lag.max = 5)
+```
+
+```{r}
+summary(tmp) # 結果の確認
+```
+
+```{r}
+wind_data <- CircularRegPred_parameter(wind_data$theta_real,tmp,lag = 3) %>% 
+   {mutate(wind_data,cos_pred = .$cos, sin_pred = .$sin)} %>% 
    mutate(theta_pred = if_else(atan2(sin_pred,cos_pred) > 0, atan2(sin_pred,cos_pred), atan2(sin_pred,cos_pred) + 2*pi))
 DT::datatable(wind_data,rownames = FALSE)
 ```
@@ -146,4 +191,19 @@ wind_data %>%
    labs(title = "Time series circular plot")
 ```
 
+```{r}
+# sin, cos
+wind_data %>% 
+  tidyr::gather(key = "variable",value  = value, cos_pred,sin_pred) %>% 
+  ggplot(aes(x=t,y=value,colour=variable)) +
+   geom_line() + 
+   theme_economist() +
+   labs(title = "time series circular plot")
+```
+
+```{r}
+plot(tmp) # ACF, PACF
+predict(tmp,n.ahead = 30, ci = .95) %>% 
+  plot() # 予測値のプロット
+```
 

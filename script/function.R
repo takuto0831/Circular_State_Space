@@ -49,6 +49,7 @@ CircularRegPred <- function(vec, lag, alpha, beta, Eps){
            rename(p=V1, cos=V2, sin=V3))
 }
 
+# パラメータを用いた予測
 CircularRegPred_parameter <- function(theta,tmp,lag){
   alpha <- Bcoef(tmp) %>% as_data_frame() %>% {as.matrix(.$const)}
   beta <- Acoef(tmp) 
@@ -57,7 +58,28 @@ CircularRegPred_parameter <- function(theta,tmp,lag){
     return()
 } 
 
+# Projected normal distribution density funciton
+PnCircular_dens <- function(theta,mu,Sigma){
+  u = matrix(c(cos(theta),sin(theta)),ncol=1)
+  A = t(u) %*% solve(Sigma) %*% u
+  B = t(u) %*% solve(Sigma) %*% mu
+  C = (-1/2) * (t(mu) %*% solve(Sigma) %*% mu)
+  tmp = B/sqrt(A)
+  p = (1/(2*pi*A*sqrt(det(Sigma)))) * exp(C) * 
+    (1 + tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))
+  return(p)
+}
 
+# Projected Normal distribution log likelihood 
+PnCircular_log <- function(theta, mu , Sigma){
+  u = matrix(c(cos(theta),sin(theta)),ncol=1)
+  A = t(u) %*% solve(Sigma) %*% u
+  B = t(u) %*% solve(Sigma) %*% mu
+  C = (-1/2) * (t(mu) %*% solve(Sigma) %*% mu)
+  tmp = B/sqrt(A)
+  p = -log(A) -0.5*log(det(Sigma)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)));  
+  return(p)
+}
 
 # 正規乱数のパラメータより, 分散共分散行列を計算する関数
 GeneratingEps <- function(sigma_c, sigma_s, rho){
