@@ -71,7 +71,7 @@ PnCircular_dens <- function(theta,mu,Sigma){
 }
 
 # Projected Normal distribution log likelihood 
-PnCircular_log <- function(theta, mu , Sigma){
+PnCircular_log <- function(theta, mu, Sigma){
   u = matrix(c(cos(theta),sin(theta)),ncol=1)
   A = t(u) %*% solve(Sigma) %*% u
   B = t(u) %*% solve(Sigma) %*% mu

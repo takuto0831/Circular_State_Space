@@ -7,24 +7,23 @@ functions{
     u[1] = cos(theta); u[2] = sin(theta);
     A = quad_form(inverse_spd(sigma), u); B = u' * inverse(sigma) * mu;
     C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
-    p = -log(A)- 0.5*log(determinant(sigma)) + C
+    p = -log(A) - 0.5*log(determinant(sigma)) + C
     + log(1+(D * normal_cdf(D,0,1)/exp(normal_lpdf(D|0,1))));    
     return p;
   }
 }
   
-  data{
+data{
   int N; // sample size
   real<lower=0,upper=2*pi()> theta[N]; // data
-  real<lower=0,upper=2*pi()> pre_theta[N-1]; // regressive data
-  }
-  
-  parameters{
+}
+
+parameters{
   vector[2] alpha_0;
   matrix[2,2] alpha_1;
   real<lower=0.0001> tau;
   real rho;
-  }
+}
 
 transformed parameters{
   cov_matrix[2] sigma;
@@ -37,10 +36,8 @@ model{
   tau ~ inv_gamma(0.01,0.01);
   rho ~ uniform(-1.0,1.0);
   
-  vector[N-1] ps;
+  //vector[N-1] ps;
   for(n in 2:N){
-    ps[n-1] = circular_reg_lpdf(theta[n]|pre_theta[n-1],alpha_0,alpha_1,sigma);
+    theta[n] ~ circular_reg_lpdf(theta[n-1],alpha_0,alpha_1,sigma);
   }
-  target = log_sum_exp(ps);
 }
-
