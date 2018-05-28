@@ -12,13 +12,13 @@ l <- function(arg){
     B = t(u) %*% solve(arg[,4:5]) %*% mu
     C = (-1/2) * (t(mu) %*% solve(arg[,4:5]) %*% mu)
     tmp = B/sqrt(A)
-    # 尤度を計算する
+    # 尤度を計算する (-1を乗じることで, 最大化問題を最小化問題にする)
     likelihood <- append(likelihood,
-                         -log(A) - 0.5*log(det(arg[,4:5])) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
+                         # -log(A) - 0.5*log(det(arg[,4:5])) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
+                         log(A) + 0.5*log(det(arg[,4:5])) - C - log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
     )
   }
-  # -1を乗じることで, 最大化問題を最小化問題にする.
-  -sum(likelihood)
+  sum(likelihood)
 }
 # 不等式制約
 inequalityConstraint <- function(arg){
@@ -26,6 +26,7 @@ inequalityConstraint <- function(arg){
   tmp <- eigen(arg[,4:5])$values
   tmp # 逆行列を持つ
 }
+
 # 不等式数値
 ineq.lower <- c(0.001,0.001)
 ineq.upper <- c(1000,1000)
@@ -60,7 +61,6 @@ ans_stan <- function(stan_){
 }
 
 #######################  main 関数  ##########################
-
 library(dplyr)
 library(tidyverse)
 library(circular)
