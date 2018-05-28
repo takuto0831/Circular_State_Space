@@ -3,7 +3,7 @@
 # Projected Normal AutoRegressive Process
 l <- function(arg){
   # data = theta, arg = c(alpha_0, alpha_1, Sigma)
-  arg = matrix(arg,nrow = 2) # データを行列化
+  arg <- matrix(arg,nrow = 2) # データを行列化
   likelihood <- c(0)
   for(i in 2:10){
     u = matrix(c(cos(data[i]),sin(data[i])),ncol=1) 
@@ -20,16 +20,45 @@ l <- function(arg){
   }
   sum(likelihood)
 }
-# 不等式制約
-inequalityConstraint <- function(arg){
+
+ll <- function(arg){
+  # data = theta, arg = c(alpha_0, alpha_1, tau,rho)
   arg <- matrix(arg,nrow = 2) # データを行列化
-  tmp <- eigen(arg[,4:5])$values
-  tmp # 逆行列を持つ
+  Sigma <- matrix(c(arg[1,4]^2, arg[1,4]*arg[2,4], 
+                    arg[1,4]*arg[2,4],1),nrow = 2)
+  likelihood <- c(0)
+  for(i in 2:10){
+    u = matrix(c(cos(data[i]),sin(data[i])),ncol=1) 
+    mu = arg[,1] + arg[,2:3] %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)
+    A = t(u) %*% solve(Sigma) %*% u
+    B = t(u) %*% solve(Sigma) %*% mu
+    C = (-1/2) * (t(mu) %*% solve(Sigma) %*% mu)
+    tmp = B/sqrt(A)
+    # 尤度を計算する (-1を乗じることで, 最大化問題を最小化問題にする)
+    likelihood <- append(likelihood,
+                         # -log(A) - 0.5*log(det(Sigma)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
+                         log(A) + 0.5*log(det(Sigma)) - C - log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
+    )
+  }
+  sum(likelihood)
 }
 
-# 不等式数値
-ineq.lower <- c(0.001,0.001)
-ineq.upper <- c(1000,1000)
+
+# 不等式制約 for l
+inequalityConstraint <- function(arg){
+  arg <- matrix(arg,nrow = 2) # データを行列化
+  tmp1 <- eigen(arg[,4:5])$values
+  tmp2 <- det(arg[,4:5]) %>% abs()
+  c(tmp1,tmp2) # 逆行列を持つ
+}
+
+ineq.lower <- c(0.00001,0.00001,0.00001)
+ineq.upper <- c(1000,1000,1000)
+
+# 不等式制約 for ll
+inequalityConstraint <- function(arg){ arg }; 
+ineq.lower <-c(-100,-100,-100,-100,-100,-100,0.001,-1); 
+ineq.upper <- c(100,100,100,100,100,100,100,1)
 
 # 結果のベクトルを抽出する
 ans <- function(solution){
@@ -74,23 +103,25 @@ wind_data <- wind %>%
 #################### パラメータ初期値 #####################
 alpha_0 <- matrix(c(0,0),nrow=2) # const
 alpha_1 <- matrix(c(0.3,0,0,0.2),nrow=2) #mu_0
-Sigma <- matrix(c(0.1,0,0.1,0.1),nrow=2) #sigma
+# Sigma <- matrix(c(0.1,0,0.1,0.1),nrow=2) #sigma
+tau <- 0.01; rho <- 0
 data <- wind_data$theta_real # analysis
 #data <- Sim_data$theta # simulation
 num <- length(data)
 # 推定したいパラメータをまとめる
-arg <- c(alpha_0,alpha_1,Sigma)
+# arg <- c(alpha_0,alpha_1,Sigma)
+arg <- c(alpha_0,alpha_1,tau,rho)
 
 ############## Rsolnp を用いて最適化 ######################
 library(Rsolnp)
-#solution <- solnp(arg, fun = l)
-solution <- solnp(arg, fun = l, ineqfun = inequalityConstraint, ineqLB =ineq.lower,ineqUB = ineq.upper) #制約付き問題
+solution <- solnp(arg, fun = ll)
+solution <- solnp(arg, fun = ll, ineqfun = inequalityConstraint, ineqLB =ineq.lower,ineqUB = ineq.upper) #制約付き問題
 data_ans <- ans(solution) # パラメータ推定値を用いて, 予測
 
 ############# stan code ################
 library(rstan)
 d.dat<-list(N=length(data),theta=data)
-fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1)
+fit<-stan(file='stan/test.stan',data=d.dat,iter=2000,chains=1)
 data_ans <- ans_stan(fit) # パラメータ推定値を用いて, 予測 
 
 ############### 結果の出力 ################
