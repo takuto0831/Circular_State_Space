@@ -27,7 +27,7 @@ ll <- function(arg){
   Sigma <- matrix(c(arg[1,4]^2, arg[1,4]*arg[2,4], 
                     arg[1,4]*arg[2,4],1),nrow = 2)
   likelihood <- c(0)
-  for(i in 2:10){
+  for(i in 2:2){
     u = matrix(c(cos(data[i]),sin(data[i])),ncol=1) 
     mu = arg[,1] + arg[,2:3] %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)
     A = t(u) %*% solve(Sigma) %*% u
@@ -39,10 +39,11 @@ ll <- function(arg){
                          # -log(A) - 0.5*log(det(Sigma)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
                          log(A) + 0.5*log(det(Sigma)) - C - log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
     )
+    browser()
   }
+  #browser()
   sum(likelihood)
 }
-
 
 # 不等式制約 for l
 inequalityConstraint <- function(arg){
@@ -71,24 +72,6 @@ ans <- function(solution){
   return(Ans)
 }
 
-# 結果のベクトルを抽出
-ans_stan <- function(stan_){
-  fit_ext <- extract(fit,permuted=T)
-  # シュミレーション値1
-  alpha_0 = matrix(c(fit_ext$alpha_0[,1] %>% mean(),fit_ext$alpha_0[,2] %>% mean()),ncol=1)
-  alpha_1 = matrix(c(fit_ext$alpha_1[,1,1] %>% mean(),fit_ext$alpha_1[,1,2] %>% mean(),
-                     fit_ext$alpha_1[,2,1] %>% mean(),1),ncol=2)
-  # mu = matrix(c(fit_ext$mu[,1] %>% mean(),fit_ext$mu[,2] %>% mean()),ncol=1)
-  Sigma = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
-                   fit_ext$sigma[,2,1] %>% mean(),1),ncol=2)
-  Ans <- c()
-  for(i in 2:num){
-    ans <- alpha_0+ (alpha_1 %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)) + mvrnorm(1,c(0,0),Sigma)
-    Ans <- rbind(Ans,t(ans))
-  }
-  return(Ans)  
-}
-
 #######################  main 関数  ##########################
 library(dplyr)
 library(tidyverse)
@@ -115,14 +98,7 @@ arg <- c(alpha_0,alpha_1,tau,rho)
 ############## Rsolnp を用いて最適化 ######################
 library(Rsolnp)
 solution <- solnp(arg, fun = ll)
-solution <- solnp(arg, fun = ll, ineqfun = inequalityConstraint, ineqLB =ineq.lower,ineqUB = ineq.upper) #制約付き問題
-data_ans <- ans(solution) # パラメータ推定値を用いて, 予測
-
-############# stan code ################
-library(rstan)
-d.dat<-list(N=length(data),theta=data)
-fit<-stan(file='stan/test.stan',data=d.dat,iter=2000,chains=1)
-data_ans <- ans_stan(fit) # パラメータ推定値を用いて, 予測 
+solution <- solnp(arg, fun = ll, ineqfun = inequalityConstraint, ineqLB =ineq.lower,ineqUB = ineq.upper) #制約付き問題data_ans <- ans(solution) # パラメータ推定値を用いて, 予測
 
 ############### 結果の出力 ################
 data_ans %>% 
