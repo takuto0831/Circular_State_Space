@@ -27,7 +27,7 @@ ll <- function(arg){
   Sigma <- matrix(c(arg[1,4]^2, arg[1,4]*arg[2,4], 
                     arg[1,4]*arg[2,4],1),nrow = 2)
   likelihood <- c(0)
-  for(i in 2:2){
+  for(i in 2:10){
     u = matrix(c(cos(data[i]),sin(data[i])),ncol=1) 
     mu = arg[,1] + arg[,2:3] %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)
     A = t(u) %*% solve(Sigma) %*% u
@@ -39,7 +39,7 @@ ll <- function(arg){
                          # -log(A) - 0.5*log(det(Sigma)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
                          log(A) + 0.5*log(det(Sigma)) - C - log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
     )
-    browser()
+    #browser()
   }
   #browser()
   sum(likelihood)
