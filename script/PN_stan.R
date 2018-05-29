@@ -9,7 +9,7 @@ ans_stan <- function(fit){
                      fit_ext$alpha_1[,2,1] %>% mean(),1),ncol=2)
   # mu = matrix(c(fit_ext$mu[,1] %>% mean(),fit_ext$mu[,2] %>% mean()),ncol=1)
   Sigma = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
-                   fit_ext$sigma[,2,1] %>% mean(),1),ncol=2)
+                   fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),ncol=2)
   Ans <- c()
   for(i in 2:num){
     ans <- alpha_0+ (alpha_1 %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)) + mvrnorm(1,c(0,0),Sigma)
@@ -32,7 +32,7 @@ wind_data <- wind %>%
 ############# stan code ################
 library(rstan)
 d.dat<-list(N=length(data),theta=data)
-# fit<-stan(file='stan/test.stan',data=d.dat,iter=2000,chains=1) # sigma(2,2) に対して1を仮定する
+fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
 fit<-stan(file='stan/test1.stan',data=d.dat,iter=4000,chains=1) # 分散共分散行列の過程
 fit<-stan(file='stan/circularVAR.stan',data=d.dat,iter=1000,chains=1) # 分散共分散行列の過程
 data_ans <- ans_stan(fit) # パラメータ推定値を用いて, 予測 

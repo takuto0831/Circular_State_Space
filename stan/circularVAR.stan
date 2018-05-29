@@ -15,23 +15,23 @@ functions{
   
 data{
   int N; // sample size
-  int P; // VAR(P) 
+  //int P; // VAR(P) 
   real<lower=0,upper=2*pi()> theta[N]; // data
 }
 
 parameters{
-  vector[2] alpha_0;
-  matrix[2,2] alpha_1[P];
+  unit_vector[2] alpha_0;
+  matrix[2,2] alpha_1;
   cov_matrix[2] sigma;
 }
 
 
 model{
   alpha_0 ~ multi_normal(rep_vector(0,2),diag_matrix(rep_vector(10^5,2)));
-  sigma ~ inv_wishart(2,2*diag_matrix(rep_vector(1,2)));
+  //sigma ~ inv_wishart(2,2*diag_matrix(rep_vector(1,2)));
   
-  //vector[N-1] ps;
   for(n in 2:N){
     theta[n] ~ circular_reg_lpdf(theta[n-1],alpha_0,alpha_1,sigma);
   }
 }
+
