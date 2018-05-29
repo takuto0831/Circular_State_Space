@@ -10,15 +10,22 @@ R. Jammalamadaka, TOPICS IN CIRCULAR STATISTICS, Circular Correlation and regres
 We introduce a new approach to a circular time series modeling that based on the projected normal distributions with circular-circular regression. 
 
 ```
-
 Circular_regression/  
-├ csv/
-│     ├ nerima_wind.csv(練馬区風向データ)
-├ script/  
-│     ├ function.R
-├ circular_regression.Rproj
-├ circular_regression_analysis.Rmd(実データを用いての実装)
-├ circular_regression_sim.Rmd(シミュレーションデータによる実装)
-├ circular_regression_test.Rmd(パッケージなどの内容確認)
+├── README.md
+├── circular\ regression.Rproj
+├── circular_reg_analysis.Rmd 
+├── circular_reg_optim.Rmd (from 塩濱先生, optim関数による最適化)
+├── circular_reg_sim.Rmd (simulationによる, モデルの妥当性検討)
+├── circular_test.Rmd 
+├── csv
+│   └── nerima_wind.csv
+├── script
+│   ├── PN_MLE.R
+│   ├── PN_stan.R
+│   └── function.R
+└── stan
+    ├── circularVAR.stan
+    ├── test.stan
+    └── test1.stan
 
 ```
