@@ -30,22 +30,17 @@ library(DT)
 # データの準備
 
 ```{r data}
-data(wind) # dataset we report the wind direction recorded every day from January 29, 2001 to March 31, 2001 from 3.00am to 4.00am included.
-wind_data <- wind %>%
-               data.frame(t = seq(1,310,1), theta_real=.) %>%  # put label
-               mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))
-glimpse(wind_data)
+# dataset we report the wind direction recorded every day from January 29, 2001 to March 31, 2001 from 3.00am to 4.00am included.
+# 角度データなので, 周期性を考えて, 0がモード付近になるようにシフトさせる. 元データから$-\pi$ずらして, $[-\pi,\pi]$で考える.
+data(wind) 
+wind_data <- wind %>%  
+  data.frame(t = seq(1,310,1), tmp=.) %>% # put label
+  mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
+  dplyr::select(-tmp) %>% 
+  mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))
 ```
 
-角度データなので, 周期性を考えて, 0がモード付近になるようにシフトさせる. 元データから$-\pi$ずらして, $[-\pi,\pi]$で考える.
-
 ```{r hist}
-hist(wind_data$theta_real)
-
-wind_data$theta_real[ wind_data$theta_real > pi] <- wind_data$theta_real[ wind_data$theta_real > pi] - 2*pi
-wind_data$cos_real<-cos(wind_data$theta_real)
-wind_data$sin_real<-sin(wind_data$theta_real)
-
 hist(wind_data$theta_real)
 ```
 
@@ -56,9 +51,9 @@ hist(wind_data$theta_real)
 
 ```{r likelihood}
 # Projected Normal AutoRegressive Process
-l <- function(arg,data){
+l <- function(arg,data){ # optim用
+# l <- function(arg){ # solnp用
  # data = theta, arg = c(alpha_0, alpha_1, Sigma)
- #arg = matrix(arg,nrow = 2) # データを行列化
  num <- length(data)
  a0 <- arg[1]
  a11 <- arg[2]
@@ -92,20 +87,26 @@ l <- function(arg,data){
 ```{r lik2, message =FALSE}
 #初期値の目安はcircular-circular regressionで
 lm.out <- lm.circular(y=wind_data$theta_real[-1], x=wind_data$theta_real[-310],order=1 )
-par <- c(lm.out$coefficients[,1], lm.out$coefficients[,2],
-        log(var(cos(lm.out$residuals))),
-       log(var(sin(lm.out$residuals))),
-       atanh(cor(cos(lm.out$residuals),sin(lm.out$residuals))))
-l(par, data=wind_data$theta_real)
-
+par <- c(lm.out$coefficients[,1], 
+         lm.out$coefficients[,2],
+         log(var(cos(lm.out$residuals))), # 不偏分散 cos
+         log(var(sin(lm.out$residuals))), # 不偏分散 sin
+         atanh(cor(cos(lm.out$residuals),sin(lm.out$residuals)))) #相関係数
+l(par, data=wind_data$theta_real) #尤度
 ```
 
 制約を入れないで最適化
 
+```{r solnp, eval=FALSE}
+library(Rsolnp)
+data = wind_data$theta_real
+solution <- solnp(par, fun = l)
+```
+
 ```{r optimization1}
 fit <- optim(par, l, data=wind_data$theta_real, control=list(maxit=20000))
 #変換したパラメータをもとに戻す
-fit$par2 <- c(fit$par[1:6],exp(fit$par[7:8]), tanh(fit$par[9]))
+fit$par2 <- c(fit$par[1:6],exp(fit$par[7:8]), tanh(fit$par[9])) # パラメータの操作がよくわからない
 # conditional mean
 cond.mean <- function(par, data){
  num<-length(data)
@@ -118,20 +119,18 @@ cond.mean <- function(par, data){
  mu<- matrix(0, ncol=2, nrow=(num-1) )
  for(i in 2:num){
    u = matrix(c(cos(data[i]),sin(data[i])),ncol=1)
-   mu[(i-1),] = matrix(c(a0,b0), ncol=1) +matrix(c(a11,b11, a12,b12), ncol=2, nrow=2) %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)}
-return(mu)
+   mu[(i-1),] = matrix(c(a0,b0), ncol=1) + 
+     matrix(c(a11,b11, a12,b12), ncol=2, nrow=2) %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)}
+ return(mu)
 }
+
 mu.hat <- cond.mean(par= fit$par2, data= wind_data$theta_real)
 Sig <- matrix( c( fit$par2[7]^2, fit$par2[7]*fit$par2[8]*fit$par2[9],
-                 fit$par2[7]*fit$par2[8]*fit$par2[9], fit$par2[8]^2
-                 ), ncol=2, nrow=2)
+                  fit$par2[7]*fit$par2[8]*fit$par2[9], fit$par2[8]^2), ncol=2, nrow=2)
 ```
-
 
 predictionを入れてみる.
 sinモーメントとcosモーメントを計算しないといけない.
-
-
 
 ```{r prediction}
 dPnCircular_dens <- function(theta,mu,Sigma){
@@ -148,13 +147,14 @@ dPnCircular_dens <- function(theta,mu,Sigma){
  return(p)
 }
 
-v.dPnCircular_dens <- Vectorize(dPnCircular_dens, "theta")
+v.dPnCircular_dens <- Vectorize(dPnCircular_dens, "theta") 
+
 trigonometric.moment <-function(mu,Sigma){
- fn.sin<-function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma)
+  fn.sin<-function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin(theta) * 確率??
   fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma)
   num<- dim(mu)[1]
- sin.mom <- cos.mom<- 0
- pred <- 0
+  sin.mom <- cos.mom<- 0
+  pred <- 0
   for(i in 1:num){
    sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi,
                            mu=mu[i,], Sigma=Sigma)$value
@@ -166,8 +166,8 @@ trigonometric.moment <-function(mu,Sigma){
    else if(c1 <0){ return(atan(s1/c1)+pi)}
    #else if(s1 <0 && c1 >0) { return(atan(s1/c1)+2*pi) }
    else if(s1 <0 && c1 >0) { return(atan(s1/c1)) }
-  }
- pred[i]<- m.hat(cos.mom[i], sin.mom[i])
+   }
+   pred[i]<- m.hat(cos.mom[i], sin.mom[i])
    }
  return(pred)
  }
