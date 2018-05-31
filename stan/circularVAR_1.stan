@@ -16,7 +16,7 @@ functions{
 data{
   int N; // sample size
   //int P; // VAR(P) 
-  real<lower=0,upper=2*pi()> theta[N]; // data
+  real<lower=-pi(),upper=pi()> theta[N]; // data
 }
 
 parameters{
