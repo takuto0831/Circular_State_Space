@@ -46,8 +46,9 @@ library(loo)
 
 # Function
 
-```{r}
+```{r not need, eval=FALSE,echo=FALSE}
 # 結果のベクトルを抽出 var(1)
+# 一般化しkて記述できているので不要
 ans_stan <- function(fit,num,data){
   fit_ext <- rstan::extract(fit,permuted=T)
   # Const parameter
@@ -69,6 +70,22 @@ ans_stan <- function(fit,num,data){
   }
   return(Ans)  
 }
+```
+
+```{r}
+# Projected Normal Circular Plobability Density 
+dPnCircular_dens <- function(theta,mu,Sigma){
+ u = matrix(c(cos(theta),sin(theta)),ncol=1)
+ A = t(u) %*% solve(Sigma) %*% u
+ B = t(u) %*% solve(Sigma) %*% mu
+ C = (-1/2) * (t(mu) %*% solve(Sigma) %*% mu)
+ tmp = B/sqrt(A)
+ p = as.numeric((1/(2*pi*A*sqrt(det(Sigma)))) * exp(C) *
+   (1 + tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
+ return(p)
+}
+# Vectorize 関数
+v.dPnCircular_dens <- Vectorize(dPnCircular_dens, "theta") 
 
 # 結果のベクトルを抽出 VAR(p)
 ans_stan_p <- function(fit,P,num,data){
@@ -85,24 +102,32 @@ ans_stan_p <- function(fit,P,num,data){
     alpha_1 <- cbind(alpha_1, tmp)
   }
   # Variance-Covariance matrix
-  Sigma = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
-                   fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),ncol=2)
-  # 誤差項を計算, 正規乱数を計算した後にノルムで割って正規化する
-  set.seed(31) # ランダムシード
-  eps <- mvrnorm(1,c(0,0),Sigma) %>% 
-    {. / ( sqrt(t(.) %*% .) %>% as.numeric() )}
-
-  Ans <- c(); # 予測値を格納する
-  for(i in 1+P:num){
+  Sigma_hat = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
+                       fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),ncol=2)
+  # Estimate condition mean 
+  mu_hat <- matrix(0, ncol=2, nrow=(num-P) )
+  for(i in (1+P):num){
     pre <- c(); # p期前のcos(theta), sin(theta)を格納する
     for (k in 1:P) {
       tmp <- matrix(c(cos(data[i-k]),sin(data[i-k])),ncol=1)
       pre <- rbind(pre,tmp)
       }
-    ans <- alpha_0 + (alpha_1 %*% pre) + eps
-    Ans <- rbind(Ans,t(ans))
+    mu_hat[i-P,] <- alpha_0 + ( alpha_1 %*% pre )
   }
-  return(Ans)  
+  # Estimate moment
+  fn.sin<-function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin func
+  fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # cos func
+  # Estimate parameter
+  len <- dim(mu_hat)[1]; sin.mom <- cos.mom<- 0; pred <- 0
+  # 
+  for(i in 1:len){
+   sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi,
+                           mu=mu_hat[i,], Sigma=Sigma_hat)$value
+   cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi,
+                           mu=mu_hat[i,], Sigma=Sigma_hat)$value
+  }
+  pred <- atan2(sin.mom,cos.mom)
+  return(pred)  
 }
 ```
 
@@ -124,14 +149,13 @@ wind_data <- wind %>%
 ## stan test
 
 ```{r stan test, eval=FALSE}
-d.dat1 <- list(N=length(wind_data$theta_real),theta=wind_data$theta_real) # for VAR(1)
-d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(p)
+d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
+d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
 #fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
 #fit<-stan(file='stan/test1.stan',data=d.dat,iter=4000,chains=1) # 分散共分散行列の過程
-model1 <- stan_model('stan/circularVAR_1.stan')
-fit1 <- sampling(model1, data = d.dat1, iter=500, chains=1) # 分散共分散行列の過程
-model2 <- stan_model('stan/circularVAR_p.stan') # compile
-fit2 <- sampling(model2, data = d.dat2, iter=500, chains=1) # Execute model 
+model <- stan_model('stan/circularVAR_p.stan')
+fit1 <- sampling(model, data = d.dat1, iter=1000, chains=1) # Execute model
+fit2 <- sampling(model, data = d.dat2, iter=1000, chains=1) # Execute model 
 ```
 
 ## stan parallel processing code
@@ -165,26 +189,10 @@ load("fit/circularVAR_2.rda", verbose = TRUE) # load fit
 # output predict value
 
 ```{r}
-data_ans1 <- ans_stan(fit1,num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
-data_ans2 <- ans_stan_p(fit2, P=2, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
-
-data_ans1 %>%  # var(1)
-  as_data_frame() %>% 
-  mutate(t = seq(1,length(data_ans1)/2,1)) %>% 
-  tidyr::gather(key = "variable",value  = value, V1,V2) %>% 
-  ggplot(aes(x=t,y=value,colour=variable)) +
-  geom_line() + 
-  theme_economist() +
-  labs(title = "time series circular plot")
-
-data_ans2 %>% # var(p)
-  as_data_frame() %>% 
-  mutate(t = seq(1,length(data_ans2)/2,1)) %>% 
-  tidyr::gather(key = "variable",value  = value, V1,V2) %>% 
-  ggplot(aes(x=t,y=value,colour=variable)) +
-  geom_line() + 
-  theme_economist() +
-  labs(title = "time series circular plot")
+pred_1 <- ans_stan_p(fit1, P=1, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
+matplot(cbind(wind_data$theta_real[-c(1:1)],c(NA,pred_1)),type="l")
+pred_2 <- ans_stan_p(fit2, P=2, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
+matplot(cbind(wind_data$theta_real[-c(1:2)],c(NA,pred_2)),type="l")
 ```
 
 # Diagnosis
@@ -202,6 +210,8 @@ stan_ac(fit2)
 ```{r}
 log_lik1 <- extract_log_lik(fit1,"log_likelihood")
 loo::waic(log_lik1)
+log_lik2 <- extract_log_lik(fit2,"log_likelihood")
+loo::waic(log_lik2)
 ```
 
 
