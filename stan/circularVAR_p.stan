@@ -47,7 +47,7 @@ generated quantities{
     for(k in 1:P){
       pre_theta[k] = theta[n-k];
     }
-    log_likelihood[n-1] = circular_reg_lpdf(theta[n], theta[n-1], alpha_0, alpha_1, sigma);
+    log_likelihood[n-P] = circular_reg_lpdf(theta[n]| P, pre_theta, alpha_0, alpha_1, sigma);
   } 
 }
 
