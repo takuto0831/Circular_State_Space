@@ -18,7 +18,7 @@ library(knitr)
 ## Global options
 options(max.print="75", digits=5)
 opts_chunk$set(echo=TRUE,
-               #cache = TRUE, # 現状大きな計算はしていないので
+               cache = FALSE, # 現状大きな計算はしていないので
 	             prompt=FALSE,
                tidy=TRUE,
                comment=NA,
@@ -40,31 +40,38 @@ library(ggthemes)
 library(vars)
 library(MASS)
 library(rstan)
+library(MCMCpack)
+library(loo)
 ```
 
 # Function
 
 ```{r}
 # 結果のベクトルを抽出 var(1)
-ans_stan <- function(fit){
+ans_stan <- function(fit,num,data){
   fit_ext <- rstan::extract(fit,permuted=T)
-  # シュミレーション値1
+  # Const parameter
   alpha_0 = matrix(c(fit_ext$alpha_0[,1] %>% mean(),fit_ext$alpha_0[,2] %>% mean()),ncol=1)
+  # Beta parameter
   alpha_1 = matrix(c(fit_ext$alpha_1[,1,1] %>% mean(),fit_ext$alpha_1[,1,2] %>% mean(),
                      fit_ext$alpha_1[,2,1] %>% mean(),1),ncol=2)
   # mu = matrix(c(fit_ext$mu[,1] %>% mean(),fit_ext$mu[,2] %>% mean()),ncol=1)
   Sigma = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
                    fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),ncol=2)
+    # 誤差項を計算, 正規乱数を計算した後にノルムで割って正規化する
+  set.seed(31) # ランダムシード
+  eps <- mvrnorm(1,c(0,0),Sigma) %>% 
+    {. / ( sqrt(t(.) %*% .) %>% as.numeric() )}
   Ans <- c()
   for(i in 2:num){
-    ans <- alpha_0+ (alpha_1 %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)) + mvrnorm(1,c(0,0),Sigma)
+    ans <- alpha_0+ (alpha_1 %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)) + eps
     Ans <- rbind(Ans,t(ans))
   }
   return(Ans)  
 }
 
 # 結果のベクトルを抽出 VAR(p)
-ans_stan_p <- function(fit,P){
+ans_stan_p <- function(fit,P,num,data){
   # 得られたモデルを抽出する
   fit_ext <- rstan::extract(fit,permuted=T)
   # 格納する変数を用意する
@@ -117,13 +124,14 @@ wind_data <- wind %>%
 ## stan test
 
 ```{r stan test, eval=FALSE}
-d.dat <- list(N=length(data),theta=data) # for VAR(1)
-d.dat <- list(N=length(data),P=2,theta=data) # for VAR(p)
+d.dat1 <- list(N=length(wind_data$theta_real),theta=wind_data$theta_real) # for VAR(1)
+d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(p)
 #fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
 #fit<-stan(file='stan/test1.stan',data=d.dat,iter=4000,chains=1) # 分散共分散行列の過程
-#fit<-stan(file='stan/circularVAR_1.stan',data=d.dat,iter=200,chains=1) # 分散共分散行列の過程
-model <- stan_model('stan/circularVAR_p.stan') # compile
-fit <- sampling(model, data = d.dat) # Execute model 
+model1 <- stan_model('stan/circularVAR_1.stan')
+fit1 <- sampling(model1, data = d.dat1, iter=500, chains=1) # 分散共分散行列の過程
+model2 <- stan_model('stan/circularVAR_p.stan') # compile
+fit2 <- sampling(model2, data = d.dat2, iter=500, chains=1) # Execute model 
 ```
 
 ## stan parallel processing code
@@ -142,25 +150,36 @@ fit <- sampling(model,
 ```
 
 
-```{r stan save model and fit}
+```{r stan save model and fit,eval=FALSE}
 saveRDS(model, "model/circularVAR_p.rds") # save model
-save(fit, file="fit/circularVAR_p.rda")# save fit
+save(fit1, file="fit/circularVAR_1.rda")# save fit
+save(fit2, file="fit/circularVAR_2.rda")# save fit
 ```
 
 ```{r stan load model and fit}
-model <- readRDS("model/circularVAR_p.rds") # load model
-load("fit/circularVAR_p.rda", verbose = TRUE) # load fit
+# model <- readRDS("model/circularVAR_p.rds") # load model
+load("fit/circularVAR_1.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_2.rda", verbose = TRUE) # load fit
 ```
 
 # output predict value
 
 ```{r}
-data_ans <- ans_stan(fit) # パラメータ推定値を用いて, 予測 
-data_ans <- ans_stan_p(fit,P=2) # パラメータ推定値を用いて, 予測 
+data_ans1 <- ans_stan(fit1,num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
+data_ans2 <- ans_stan_p(fit2, P=2, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
 
-data_ans %>% 
+data_ans1 %>%  # var(1)
   as_data_frame() %>% 
-  mutate(t = seq(1,length(data_ans)/2,1)) %>% 
+  mutate(t = seq(1,length(data_ans1)/2,1)) %>% 
+  tidyr::gather(key = "variable",value  = value, V1,V2) %>% 
+  ggplot(aes(x=t,y=value,colour=variable)) +
+  geom_line() + 
+  theme_economist() +
+  labs(title = "time series circular plot")
+
+data_ans2 %>% # var(p)
+  as_data_frame() %>% 
+  mutate(t = seq(1,length(data_ans2)/2,1)) %>% 
   tidyr::gather(key = "variable",value  = value, V1,V2) %>% 
   ggplot(aes(x=t,y=value,colour=variable)) +
   geom_line() + 
@@ -171,8 +190,18 @@ data_ans %>%
 # Diagnosis
 
 ```{r}
-stan_trace(fit)
-stan_ac(fit)
+stan_trace(fit1)
+stan_ac(fit1)
+
+stan_trace(fit2)
+stan_ac(fit2)
+```
+
+# Estimate loglikelihood and waic
+
+```{r}
+log_lik1 <- extract_log_lik(fit1,"log_likelihood")
+loo::waic(log_lik1)
 ```
 
 
