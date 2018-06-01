@@ -3,7 +3,7 @@ functions{
     vector[2] u; vector[2] tmp; vector[2] mu;
     real A; real B; real C; real D; real p;
     tmp[1] = cos(pre_theta); tmp[2] = sin(pre_theta);
-    mu = alpha_0 + alpha_1 * tmp; 
+    mu = alpha_0 + (alpha_1 * tmp); 
     u[1] = cos(theta); u[2] = sin(theta);
     A = quad_form(inverse_spd(sigma), u); B = u' * inverse(sigma) * mu;
     C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
@@ -15,7 +15,6 @@ functions{
   
 data{
   int N; // sample size
-  //int P; // VAR(P) 
   real<lower=-pi(),upper=pi()> theta[N]; // data
 }
 
@@ -24,7 +23,6 @@ parameters{
   matrix[2,2] alpha_1;
   cov_matrix[2] sigma;
 }
-
 
 model{
   alpha_0 ~ multi_normal(rep_vector(0,2),diag_matrix(rep_vector(10^5,2)));
@@ -35,3 +33,9 @@ model{
   }
 }
 
+generated quantities{
+  vector[N-1] log_likelihood;
+  for(n in 2:N){
+    log_likelihood[n-1] = circular_reg_lpdf(theta[n], theta[n-1], alpha_0, alpha_1, sigma);
+  } 
+}

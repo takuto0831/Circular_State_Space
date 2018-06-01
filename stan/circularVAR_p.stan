@@ -40,3 +40,14 @@ model{
   }
 }
 
+generated quantities{
+  vector[N-P] log_likelihood;
+  for(n in 1+P:N){
+    vector[P] pre_theta; // P期前までのtheta ベクトルを用意する.
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    log_likelihood[n-1] = circular_reg_lpdf(theta[n], theta[n-1], alpha_0, alpha_1, sigma);
+  } 
+}
+
