@@ -26,7 +26,6 @@ library(MASS)
 library(DT)
 ```
 
-
 # データの準備
 
 ```{r data}
@@ -43,7 +42,6 @@ wind_data <- wind %>%
 ```{r hist}
 hist(wind_data$theta_real)
 ```
-
 
 # likelihood function
 
