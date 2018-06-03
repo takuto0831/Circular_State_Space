@@ -164,9 +164,9 @@ load("fit/circularVAR_2.rda", verbose = TRUE) # load fit
 
 ```{r}
 pred_1 <- ans_stan_p(fit1, P=1, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
-matplot(cbind(wind_data$theta_real[-c(1:1)],c(NA,pred_1)),type="l")
+matplot(cbind(wind_data$theta_real[-c(1:1)],pred_1),type="l")
 pred_2 <- ans_stan_p(fit2, P=2, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
-matplot(cbind(wind_data$theta_real[-c(1:2)],c(NA,pred_2)),type="l")
+matplot(cbind(wind_data$theta_real[-c(1:2)],pred_2),type="l")
 ```
 
 # Diagnosis
