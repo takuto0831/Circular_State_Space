@@ -8,10 +8,9 @@ functions{
     }
     mu = alpha_0 + ( alpha_1 * tmp); 
     u[1] = cos(theta); u[2] = sin(theta);
-    A = quad_form(inverse_spd(sigma), u); B = u' * inverse(sigma) * mu;
+    A = quad_form(inverse_spd(sigma), u); B = u' * inverse_spd(sigma) * mu;
     C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
-    p = -log(A) - 0.5*log(determinant(sigma)) + C
-    + log(1+(D * normal_cdf(D,0,1)/exp(normal_lpdf(D|0,1))));    
+    p = - log(A) - 0.5*log(determinant(sigma)) + C + log(1+(D * normal_cdf(D,0,1)/exp(normal_lpdf(D|0,1))));    
     return p;
   }
 }
