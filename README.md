@@ -22,7 +22,7 @@ We introduce a new approach to a circular time series modeling that based on the
 ├── circular regression.Rproj
 ├── circular_reg_analysis.Rmd (実データ分析用)
 ├── circular_reg_analysis.html 
-├── circular_reg_optim.Rmd (実データ分析用, optim関数, 先生作)
+├── circular_reg_optim.Rmd (実データ分析用, optim関数, Rsolnp関数, 制約付き実行可能)
 ├── circular_reg_sim.Rmd (simulation data 分析用, 作成途中)
 ├── circular_reg_stan.Rmd (MCMCによる推定, VAR(p) model まで一通り作成)
 ├── circular_test.Rmd 
@@ -35,7 +35,7 @@ We introduce a new approach to a circular time series modeling that based on the
 │   └── circularVAR_p_2.rds (circularVAR_p_.stanによるstan model)
 ├── script
 │   ├── PN_MLE.R (Rsolnp package による実装, 実行不可)
-│   ├── VAR.R 
+│   ├── VAR.R (Vector auto regressive関数, 自作関数を作成する参考になるかも)
 │   └── function.R (確率密度関数等, 種々の関数保存ファイル)
 └── stan
     ├── circularVAR_1.stan (VAR(1) model, errorあり, p次元に拡張したモデルあるので不要)
