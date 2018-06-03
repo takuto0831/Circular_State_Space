@@ -49,24 +49,19 @@ hist(wind_data$theta_real)
 
 ```{r likelihood}
 # Projected Normal AutoRegressive Process
-l <- function(arg,data){ # optim用
-# l <- function(arg){ # solnp用
- # data = theta, arg = c(alpha_0, alpha_1, Sigma)
+l <- function(arg){ 
  num <- length(data)
- a0 <- arg[1]
- a11 <- arg[2]
- a12 <- arg[3]
- b0 <- arg[4]
- b11 <- arg[5]
- b12 <- arg[6]
- sigma1 <- exp(arg[7])
- sigma2 <- exp(arg[8])
- rho <- tanh(arg[9])
+ a0 <- arg[1]; b0 <- arg[4];
+ a11 <- arg[2]; a12 <- arg[3]
+ b11 <- arg[5]; b12 <- arg[6]
+ sigma1 <- exp(arg[7]) # 非負値
+ sigma2 <- exp(arg[8]) # 非負値
+ rho <- tanh(arg[9]) # 数値を-1 ~ 1に抑え込む
  Sig <- matrix(c(sigma1^2, rho*sigma1*sigma2,rho*sigma1*sigma2, sigma2^2 ),2,2)
  likelihood <- c(0)
  for(i in 2:num){
    u = matrix(c(cos(data[i]),sin(data[i])),ncol=1)
-   mu = matrix(c(a0,b0), ncol=1) +matrix(c(a11,b11, a12,b12), ncol=2, nrow=2) %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)
+   mu = matrix(c(a0,b0), ncol=1) + matrix(c(a11,b11, a12,b12), ncol=2, nrow=2) %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)
    A = t(u) %*% solve(Sig) %*% u
    B = t(u) %*% solve(Sig) %*% mu
    C = (-1/2) * (t(mu) %*% solve(Sig) %*% mu)
@@ -75,8 +70,9 @@ l <- function(arg,data){ # optim用
    likelihood <- append(likelihood,
                         -log(A) - 0.5*log(det(Sig)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))))
  }
- # -1を乗じることで, 最大化問題を最小化問題にする.
- - sum(likelihood)
+ # print(arg[7]) #debug用
+ # print(arg[8]) #debug用
+ - sum(likelihood) # -1を乗じることで, 最大化問題を最小化問題にする.
 }
 ```
 
@@ -90,10 +86,15 @@ par <- c(lm.out$coefficients[,1],
          log(var(cos(lm.out$residuals))), # 不偏分散 cos
          log(var(sin(lm.out$residuals))), # 不偏分散 sin
          atanh(cor(cos(lm.out$residuals),sin(lm.out$residuals)))) #相関係数
-l(par, data=wind_data$theta_real) #尤度
+# l(par, data=wind_data$theta_real) #尤度
 ```
 
-制約を入れないで最適化
+## solnp 関数
+
+問題点
+
+- sigma1, sigma2が爆発的に増加する.
+- 制約で抑え込む必要ある.
 
 ```{r solnp, eval=FALSE}
 library(Rsolnp)
@@ -101,10 +102,15 @@ data = wind_data$theta_real
 solution <- solnp(par, fun = l)
 ```
 
+## optim 関数
+
+制約を入れないで最適化
+
 ```{r optimization1}
-fit <- optim(par, l, data=wind_data$theta_real, control=list(maxit=20000))
+data = wind_data$theta_real
+fit <- optim(par, l, control=list(maxit=20000))
 #変換したパラメータをもとに戻す
-fit$par2 <- c(fit$par[1:6],exp(fit$par[7:8]), tanh(fit$par[9])) # パラメータの操作がよくわからない
+fit$par2 <- c(fit$par[1:6],exp(fit$par[7:8]), tanh(fit$par[9])) 
 # conditional mean
 cond.mean <- function(par, data){
  num<-length(data)
@@ -125,6 +131,13 @@ cond.mean <- function(par, data){
 mu.hat <- cond.mean(par= fit$par2, data= wind_data$theta_real)
 Sig <- matrix( c( fit$par2[7]^2, fit$par2[7]*fit$par2[8]*fit$par2[9],
                   fit$par2[7]*fit$par2[8]*fit$par2[9], fit$par2[8]^2), ncol=2, nrow=2)
+```
+
+## 結果
+
+```{r}
+fit # paramter
+Sig # 分散共分散行列
 ```
 
 predictionを入れてみる.
@@ -152,28 +165,19 @@ trigonometric.moment <-function(mu,Sigma){
   fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma)
   num<- dim(mu)[1]
   sin.mom <- cos.mom<- 0
-  pred <- 0
   for(i in 1:num){
    sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi,
                            mu=mu[i,], Sigma=Sigma)$value
    cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi,
                            mu=mu[i,], Sigma=Sigma)$value
-   #print(c(sin.mom[i],cos.mom[i]))
-   m.hat <-function(c1, s1){
-     if( c1 >0 && s1 >0){ return(atan(s1/c1))}
-     else if(c1 <0){ return(atan(s1/c1)+pi)}
-     #else if(s1 <0 && c1 >0) { return(atan(s1/c1)+2*pi) }
-     else if(s1 <0 && c1 >0) { return(atan(s1/c1)) }
-     }
-   pred[i]<- m.hat(cos.mom[i], sin.mom[i])
-   }
- return(pred)
- }
+  }
+  #print(c(sin.mom[i],cos.mom[i]))
+  pred <- atan2(sin.mom,cos.mom)
+  return(pred)
+}
 
 mu.pred <- trigonometric.moment(mu=mu.hat,Sigma=Sig)
-
-
-matplot(cbind(wind_data$theta_real,c(NA,mu.pred)),type="l")
+matplot(cbind(wind_data$theta_real[-c(1:1)], mu.pred),type="l")
 ```
 
 一応こんな感じ。
