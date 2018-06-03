@@ -46,32 +46,6 @@ library(loo)
 
 # Function
 
-```{r not need, eval=FALSE,echo=FALSE}
-# 結果のベクトルを抽出 var(1)
-# 一般化しkて記述できているので不要
-ans_stan <- function(fit,num,data){
-  fit_ext <- rstan::extract(fit,permuted=T)
-  # Const parameter
-  alpha_0 = matrix(c(fit_ext$alpha_0[,1] %>% mean(),fit_ext$alpha_0[,2] %>% mean()),ncol=1)
-  # Beta parameter
-  alpha_1 = matrix(c(fit_ext$alpha_1[,1,1] %>% mean(),fit_ext$alpha_1[,1,2] %>% mean(),
-                     fit_ext$alpha_1[,2,1] %>% mean(),1),ncol=2)
-  # mu = matrix(c(fit_ext$mu[,1] %>% mean(),fit_ext$mu[,2] %>% mean()),ncol=1)
-  Sigma = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
-                   fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),ncol=2)
-    # 誤差項を計算, 正規乱数を計算した後にノルムで割って正規化する
-  set.seed(31) # ランダムシード
-  eps <- mvrnorm(1,c(0,0),Sigma) %>% 
-    {. / ( sqrt(t(.) %*% .) %>% as.numeric() )}
-  Ans <- c()
-  for(i in 2:num){
-    ans <- alpha_0+ (alpha_1 %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)) + eps
-    Ans <- rbind(Ans,t(ans))
-  }
-  return(Ans)  
-}
-```
-
 ```{r}
 # Projected Normal Circular Plobability Density 
 dPnCircular_dens <- function(theta,mu,Sigma){
@@ -118,7 +92,7 @@ ans_stan_p <- function(fit,P,num,data){
   fn.sin<-function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin func
   fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # cos func
   # Estimate parameter
-  len <- dim(mu_hat)[1]; sin.mom <- cos.mom<- 0; pred <- 0
+  len <- dim(mu_hat)[1]; sin.mom <- cos.mom<- c();
   # 
   for(i in 1:len){
    sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi,
