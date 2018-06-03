@@ -125,9 +125,12 @@ wind_data <- wind %>%
 
 # stan code
 
+model1 : const paramterにnorm1の制約を付与
+model2 : 全ての係数パラメータに-1 ~ 1の制約を付与
+
 ## stan test
 
-```{r stan test, eval=FALSE}
+```{r stan test, eval=FALSE,include=FALSE}
 d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
 d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
 #fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
@@ -142,7 +145,7 @@ fit2_2 <- sampling(model2, data = d.dat2, iter=1000, chains=1) # Execute model
 
 ## stan parallel processing code
 
-```{r stan Parallel processing, eval=FALSE}
+```{r stan Parallel processing, eval=FALSE,include=FALSE}
 rstan_options(auto_write=TRUE) # auto save
 options(mc.cores=parallel::detectCores()) # multi core
 
@@ -156,7 +159,7 @@ fit <- sampling(model,
 ```
 
 
-```{r stan save model and fit,eval=FALSE}
+```{r stan save model and fit,eval=FALSE,include=FALSE}
 saveRDS(model1, "model/circularVAR_p_1.rds") # save model
 saveRDS(model2, "model/circularVAR_p_2.rds") # save model
 save(fit1_1, file="fit/circularVAR_1_1.rda")# save fit
@@ -172,6 +175,16 @@ load("fit/circularVAR_1_1.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_2_1.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_1_2.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_2_2.rda", verbose = TRUE) # load fit
+```
+
+# output fit paremter
+
+```{r}
+options(max.print = 200)
+fit1_1 # model1, VAR(1)model
+fit2_1 # model1, VAR(2)model
+fit1_2 # model2, VAR(1)model
+fit2_2 # model2, VAR(2)model
 ```
 
 # output predict value
