@@ -25,16 +25,25 @@ data{
 parameters{
   unit_vector[2] alpha_0;
   matrix[2,2*P] alpha_1; // P個の係数行列
+  real phi1;
+  real phi2;
+  real phi3;
+}
+
+transformed parameters{
   cov_matrix[2] sigma;
+  sigma[1,1] = exp(phi1)^2; sigma[1,2] = tanh(phi3)*exp(phi1)*exp(phi2);
+  sigma[2,1] = tanh(phi3)*exp(phi1)*exp(phi2); sigma[2,2] = exp(phi2)^2;
 }
 
 model{
+  // 全てのパラメータの事前分布を独立な正規分布で仮定する
   alpha_0 ~ multi_normal(rep_vector(0,2),diag_matrix(rep_vector(10^5,2))); // ~N_2((0,0),(10^5,0,0,10^5) )
   for(i in 1:2*P){
     alpha_1[1,i] ~ normal(0,10^5); // N(0,10^5)
     alpha_1[2,i] ~ normal(0,10^5); // N(0,10^5)
   }
-  sigma ~ inv_wishart(2,diag_matrix(rep_vector(1,2)));
+  phi1 ~ normal(0,10^5); phi2 ~ normal(0,10^5); phi3 ~ normal(0,10^5);
   for(n in 1+P:N){
     vector[P] pre_theta; // P期前までのtheta ベクトルを用意する.
     for(k in 1:P){
