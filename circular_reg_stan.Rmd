@@ -103,6 +103,11 @@ ans_stan_p <- function(fit,P,num,data){
   pred <- atan2(sin.mom,cos.mom)
   return(pred)  
 }
+# output predict value
+pred_value <- function(fit,p){
+  pred <- ans_stan_p(fit, P=p, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測
+  matplot(cbind(wind_data$theta_real[-c(1:p)],pred),type="l")
+}
 ```
 
 # dataset
@@ -127,9 +132,12 @@ d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # 
 d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
 #fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
 #fit<-stan(file='stan/test1.stan',data=d.dat,iter=4000,chains=1) # 分散共分散行列の過程
-model <- stan_model('stan/circularVAR_p.stan')
-fit1 <- sampling(model, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2 <- sampling(model, data = d.dat2, iter=1000, chains=1) # Execute model 
+model1 <- stan_model('stan/circularVAR_p.stan')
+model2 <- stan_model('stan/circularVAR_p_.stan')
+fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
+fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
+fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
+fit2_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
 ```
 
 ## stan parallel processing code
@@ -149,42 +157,64 @@ fit <- sampling(model,
 
 
 ```{r stan save model and fit,eval=FALSE}
-saveRDS(model, "model/circularVAR_p.rds") # save model
-save(fit1, file="fit/circularVAR_1.rda")# save fit
-save(fit2, file="fit/circularVAR_2.rda")# save fit
+saveRDS(model1, "model/circularVAR_p_1.rds") # save model
+saveRDS(model2, "model/circularVAR_p_2.rds") # save model
+save(fit1_1, file="fit/circularVAR_1_1.rda")# save fit
+save(fit2_1, file="fit/circularVAR_2_1.rda")# save fit
+save(fit1_2, file="fit/circularVAR_1_2.rda")# save fit
+save(fit2_2, file="fit/circularVAR_2_2.rda")# save fit
 ```
 
 ```{r stan load model and fit}
-# model <- readRDS("model/circularVAR_p.rds") # load model
-load("fit/circularVAR_1.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_2.rda", verbose = TRUE) # load fit
+model1 <- readRDS("model/circularVAR_p_1.rds") # load model
+model2 <- readRDS("model/circularVAR_p_2.rds") # load model
+load("fit/circularVAR_1_1.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_2_1.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_1_2.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_2_2.rda", verbose = TRUE) # load fit
 ```
 
 # output predict value
 
 ```{r}
-pred_1 <- ans_stan_p(fit1, P=1, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
-matplot(cbind(wind_data$theta_real[-c(1:1)],pred_1),type="l")
-pred_2 <- ans_stan_p(fit2, P=2, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測 
-matplot(cbind(wind_data$theta_real[-c(1:2)],pred_2),type="l")
+# model1
+pred_value(fit = fit1_1,p = 1)
+pred_value(fit = fit2_1,p = 2)
+
+#model2
+pred_value(fit = fit1_2,p = 1)
+pred_value(fit = fit2_2,p = 2)
 ```
 
 # Diagnosis
 
 ```{r}
-stan_trace(fit1)
-stan_ac(fit1)
+# model1
+stan_trace(fit1_1)
+stan_ac(fit1_1)
+stan_trace(fit2_1)
+stan_ac(fit2_1)
 
-stan_trace(fit2)
-stan_ac(fit2)
+#model2
+stan_trace(fit1_2)
+stan_ac(fit1_2)
+stan_trace(fit2_2)
+stan_ac(fit2_2)
 ```
 
 # Estimate loglikelihood and waic
 
 ```{r}
-log_lik1 <- extract_log_lik(fit1,"log_likelihood")
+# model1
+log_lik1 <- extract_log_lik(fit1_1,"log_likelihood")
 loo::waic(log_lik1)
-log_lik2 <- extract_log_lik(fit2,"log_likelihood")
+log_lik2 <- extract_log_lik(fit2_1,"log_likelihood")
+loo::waic(log_lik2)
+
+# model2
+log_lik1 <- extract_log_lik(fit1_2,"log_likelihood")
+loo::waic(log_lik1)
+log_lik2 <- extract_log_lik(fit2_2,"log_likelihood")
 loo::waic(log_lik2)
 ```
 
