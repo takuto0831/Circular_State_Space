@@ -137,7 +137,7 @@ model2 <- stan_model('stan/circularVAR_p_.stan')
 fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
 fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
+fit2_2 <- sampling(model2, data = d.dat2, iter=1000, chains=1) # Execute model
 ```
 
 ## stan parallel processing code
