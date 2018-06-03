@@ -23,7 +23,7 @@ data{
 }
 
 parameters{
-  unit_vector[2] alpha_0;
+  vector[2] alpha_0;
   matrix[2,2*P] alpha_1; // P個の係数行列
   real phi1;
   real phi2;
