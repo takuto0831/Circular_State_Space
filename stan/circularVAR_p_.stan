@@ -10,7 +10,7 @@ functions{
     u[1] = cos(theta); u[2] = sin(theta);
     A = quad_form(inverse_spd(sigma), u); B = u' * inverse_spd(sigma) * mu;
     C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
-    p = -log(A) - 0.5*log(determinant(sigma)) + C
+    p = - log(A) - 0.5*log(determinant(sigma)) + C
     + log(1+(D * normal_cdf(D,0,1)/exp(normal_lpdf(D|0,1))));    
     return p;
   }
@@ -38,10 +38,10 @@ transformed parameters{
 
 model{
   // 全てのパラメータの事前分布を独立な正規分布で仮定する
-  alpha_0 ~ multi_normal(rep_vector(0,2),diag_matrix(rep_vector(10,2))); // ~N_2((0,0),(10^5,0,0,10^5) )
+  alpha_0 ~ multi_normal(rep_vector(0,2),diag_matrix(rep_vector(1,2))); // ~N_2((0,0),(1,0,0,1) )
   for(i in 1:2*P){
-    alpha_1[1,i] ~ normal(0,10); // N(0,10^5)
-    alpha_1[2,i] ~ normal(0,10); // N(0,10^5)
+    alpha_1[1,i] ~ normal(0,1); // N(0,1)
+    alpha_1[2,i] ~ normal(0,1); // N(0,1)
   }
   phi1 ~ normal(0,10^5); phi2 ~ normal(0,10^5); phi3 ~ normal(0,10^5);
   for(n in 1+P:N){
