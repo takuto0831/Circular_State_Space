@@ -44,7 +44,7 @@ We introduce a new approach to a circular time series modeling that based on the
     ├── circularVAR_p_norm.stan (VAR(p) model, 平均方向のベクトルのノルムを1にする, 実現不可能なので使わない) 
     ├── circularVAR_p_I.stan ( VAR(p) model, 分散構造を単位行列とする)
     ├── circularVAR_p_penalty.stan (平均ベクトルが, 単位円周上付近に存在するとして罰則項を与える)
-    ├── test.stan (test code1, 不要)
+    ├── test.stan (stan codeをR内で使用する際に, 関数式として使用)
     └── test1.stan (test code 2, 不要)
 ```
 
