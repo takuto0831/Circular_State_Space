@@ -153,10 +153,9 @@ fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_2 <- sampling(model2, data = d.dat2, iter=1000, chains=1) # Execute model
 fit1_3 <- sampling(model3, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_3 <- sampling(model3, data = d.dat2, iter=1000, chains=1) # Execute model
-fit1_4 <- sampling(model4, data = c(d.dat1,lambda=1), iter=1000, chains=1) # Execute model
-fit2_4 <- sampling(model4, data = c(d.dat2,lambda=1), iter=1000, chains=1) # Execute model
-fit3_4 <- sampling(model4, data = c(d.dat3,lambda=1), iter=3000, chains=1) # Execute model
-
+fit1_4 <- sampling(model4, data = c(d.dat1,lambda=0.5), iter=1000, chains=1) # Execute model
+fit2_4 <- sampling(model4, data = c(d.dat2,lambda=0.5), iter=1000, chains=1) # Execute model
+fit3_4 <- sampling(model4, data = c(d.dat3,lambda=0.1), iter=1000, chains=1) # Execute model
 ```
 
 ## stan parallel processing code
@@ -202,7 +201,7 @@ fit2_1 # model1, VAR(2)model
 fit1_2 # model2, VAR(1)model
 fit2_2 # model2, VAR(2)model
 fit1_4 # model4
-fit2_4 # model4
+fit3_4 # model4
 ```
 
 # output predict value
