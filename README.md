@@ -17,8 +17,6 @@ We introduce a new approach to a circular time series modeling that based on the
 
 # Tree
 
-sss
-
 ```
 ├── README.md
 ├── circular regression.Rproj
@@ -46,3 +44,4 @@ sss
     ├── test.stan (test code1, 不要)
     └── test1.stan (test code 2, 不要)
 ```
+i
