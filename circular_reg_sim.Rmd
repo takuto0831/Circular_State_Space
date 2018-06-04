@@ -34,6 +34,7 @@ library(foreach)
 library(MASS)
 library(DT)
 library(ggthemes)
+library(shinystan)
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
 ```
 
@@ -257,5 +258,18 @@ pred_value(fit = fit2_2,p = 2,dat=Sim_data$theta)
 pred_value(fit = fit1_3,p = 1,dat=Sim_data$theta)
 pred_value(fit = fit2_3,p = 2,dat=Sim_data$theta)
 pred_value(fit = fit3_3,p = 3,dat=Sim_data$theta)
+```
+
+```{r}
+log_lik <- extract_log_lik(fit2_2,"log_likelihood")
+waic(log_lik)
+log_lik %>% exp() %>% mean() %>% log()
+log_lik %>% var() %>% sum() * 2
+```
+
+# shiny stan による結果の確認
+
+```{r}
+launch_shinystan(fit2_2)
 ```
 
