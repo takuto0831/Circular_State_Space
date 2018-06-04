@@ -70,7 +70,7 @@ l <- function(arg){
    likelihood <- append(likelihood,
                         -log(A) - 0.5*log(det(Sig)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))))
  }
- print(solve(Sig)) #debug用
+ # print(solve(Sig)) #debug用
  # print(arg[8]) #debug用
  - sum(likelihood) # -1を乗じることで, 最大化問題を最小化問題にする.
 }
@@ -116,14 +116,13 @@ trigonometric.moment <-function(mu,Sigma){
   fn.sin<-function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin(theta) * 確率??
   fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma)
   num<- dim(mu)[1]
-  sin.mom <- cos.mom<- 0
+  sin.mom <- cos.mom <- 0;
   for(i in 1:num){
    sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi,
                            mu=mu[i,], Sigma=Sigma)$value
    cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi,
                            mu=mu[i,], Sigma=Sigma)$value
   }
-  #print(c(sin.mom[i],cos.mom[i]))
   pred <- atan2(sin.mom,cos.mom)
   return(pred)
 }
@@ -131,7 +130,7 @@ trigonometric.moment <-function(mu,Sigma){
 
 適当な初期値を入れて尤度が計算できるのか確認
 
-```{r lik2, message =FALSE}
+```{r}
 #初期値の目安はcircular-circular regressionで
 lm.out <- lm.circular(y=wind_data$theta_real[-1], x=wind_data$theta_real[-310],order=1 )
 par <- c(lm.out$coefficients[,1], 
@@ -142,6 +141,7 @@ par <- c(lm.out$coefficients[,1],
 # l(par, data=wind_data$theta_real) #尤度
 ```
 
+
 ## solnp 関数
 
 問題点
@@ -149,7 +149,7 @@ par <- c(lm.out$coefficients[,1],
 - sigma1, sigma2が爆発的に増加する.
 - 制約で抑え込む必要ある.
 
-```{r solnp, eval=FALSE}
+```{r solnp}
 library(Rsolnp)
 # 不等式制約 
 inequalityConstraint <- function(par){ par }; 
@@ -175,7 +175,6 @@ Sig
 mu.pred <- trigonometric.moment(mu=mu.hat,Sigma=Sig)
 matplot(cbind(wind_data$theta_real[-c(1:1)], mu.pred),type="l")
 ```
-
 
 ## optim 関数
 
