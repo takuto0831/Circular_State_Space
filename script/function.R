@@ -4,7 +4,7 @@ CircularRegSim <- function(theta_start_vec, len, alpha, beta, Eps){
   lag <- length(theta_start_vec)
   mu <- matrix(c(0,0),nrow = 2)
   d <- matrix(nrow = 3, ncol = len) 
-  
+  set.seed(31) # 乱数シード
   # 初期値を行列dに格納する.
   for(i in 1:lag){
     d[1,i] = i # 次数
@@ -18,7 +18,7 @@ CircularRegSim <- function(theta_start_vec, len, alpha, beta, Eps){
     }
     d[1,i] = i
     eps <- mvrnorm(1,mu,Eps)
-    d[2:3,i] = alpha + tmp + eps/c(t(eps) %*% eps )
+    d[2:3,i] = alpha + tmp + eps/c(sqrt(t(eps) %*% eps ))
   }
   return(d)
 }
