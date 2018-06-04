@@ -105,9 +105,9 @@ ans_stan_p <- function(fit,P,num,data){
   return(pred)  
 }
 # output predict value
-pred_value <- function(fit,p){
-  pred <- ans_stan_p(fit, P=p, num = length(wind_data$theta_real),data=wind_data$theta_real) # パラメータ推定値を用いて, 予測
-  matplot(cbind(wind_data$theta_real[-c(1:p)],pred),type="l")
+pred_value <- function(fit,p,dat){
+  pred <- ans_stan_p(fit, P=p, num = length(dat),data=dat) # パラメータ推定値を用いて, 予測
+  matplot(cbind(dat[-c(1:p)],pred),type="l")
 }
 ```
 
@@ -208,21 +208,21 @@ fit3_4 # model4
 
 ```{r}
 # model1
-pred_value(fit = fit1_1,p = 1)
-pred_value(fit = fit2_1,p = 2)
+pred_value(fit = fit1_1,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit2_1,p = 2,dat=wind_data$theta_real)
 
 #model2
-pred_value(fit = fit1_2,p = 1)
-pred_value(fit = fit2_2,p = 2)
+pred_value(fit = fit1_2,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit2_2,p = 2,dat=wind_data$theta_real)
 
 #model3
-pred_value(fit = fit1_3,p = 1) # function 内部 変更の必要あり
-pred_value(fit = fit2_3,p = 2) # function 内部 変更の必要あり
+pred_value(fit = fit1_3,p = 1,dat=wind_data$theta_real) # function 内部 変更の必要あり
+pred_value(fit = fit2_3,p = 2,dat=wind_data$theta_real) # function 内部 変更の必要あり
 
 #model4
-pred_value(fit = fit1_4,p = 1)
-pred_value(fit = fit2_4,p = 2)
-pred_value(fit = fit3_4,p = 3)
+pred_value(fit = fit1_4,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit2_4,p = 2,dat=wind_data$theta_real)
+pred_value(fit = fit3_4,p = 3,dat=wind_data$theta_real)
 ```
 
 # Diagnosis
