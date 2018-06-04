@@ -22,7 +22,7 @@ data{
 }
 
 parameters{
-  unit_vector[2] alpha_0;
+  unit_vector[2] alpha_0; // norm 1として, 数値が爆発的に増加することを防ぐ
   matrix[2,2*P] alpha_1; // P個の係数行列
   cov_matrix[2] sigma;
 }
