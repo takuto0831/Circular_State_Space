@@ -43,6 +43,7 @@ We introduce a new approach to a circular time series modeling that based on the
     ├── circularVAR_p_.stan (VAR(p) model, 平均方向のベクトルに制約を付与,-1~1の範囲)
     ├── circularVAR_p_norm.stan (VAR(p) model, 平均方向のベクトルのノルムを1にする, 不要) 
     ├── circularVAR_p_I.stan ( VAR(p) model, 分散構造を単位行列とする)
+    ├── circularVAR_p_penalty.stan (平均ベクトルが, 1付近に存在するとして罰則項を与える)
     ├── test.stan (test code1, 不要)
     └── test1.stan (test code 2, 不要)
 ```
