@@ -59,17 +59,17 @@ CircularRegPred_parameter <- function(theta,tmp,lag){
     return()
 } 
 
-# Projected normal distribution density funciton
-PnCircular_dens <- function(theta,mu,Sigma){
-  u = matrix(c(cos(theta),sin(theta)),ncol=1)
-  A = t(u) %*% solve(Sigma) %*% u
-  B = t(u) %*% solve(Sigma) %*% mu
-  C = (-1/2) * (t(mu) %*% solve(Sigma) %*% mu)
-  tmp = B/sqrt(A)
-  p = (1/(2*pi*A*sqrt(det(Sigma)))) * exp(C) * 
-    (1 + tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))
-  return(p)
-}
+# # Projected normal distribution density funciton
+# PnCircular_dens <- function(theta,mu,Sigma){
+#   u = matrix(c(cos(theta),sin(theta)),ncol=1)
+#   A = t(u) %*% solve(Sigma) %*% u
+#   B = t(u) %*% solve(Sigma) %*% mu
+#   C = (-1/2) * (t(mu) %*% solve(Sigma) %*% mu)
+#   tmp = B/sqrt(A)
+#   p = (1/(2*pi*A*sqrt(det(Sigma)))) * exp(C) * 
+#     (1 + tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))
+#   return(p)
+# }
 
 # Projected Normal distribution log likelihood 
 PnCircular_log <- function(theta, mu, Sigma){
@@ -86,4 +86,67 @@ PnCircular_log <- function(theta, mu, Sigma){
 GeneratingEps <- function(sigma_c, sigma_s, rho){
   matrix(c(sigma_c^2,rho*sigma_c*sigma_s,rho*sigma_c*sigma_s,sigma_s^2),nrow=2) %>% 
     return()
+}
+
+# Projected Normal Circular Plobability Density 
+dPnCircular_dens <- function(theta,mu,Sigma){
+  u = matrix(c(cos(theta),sin(theta)),ncol=1)
+  A = t(u) %*% solve(Sigma) %*% u
+  B = t(u) %*% solve(Sigma) %*% mu
+  C = (-1/2) * (t(mu) %*% solve(Sigma) %*% mu)
+  tmp = B/sqrt(A)
+  p = as.numeric((1/(2*pi*A*sqrt(det(Sigma)))) * exp(C) *
+                   (1 + tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
+  return(p)
+}
+# Vectorize 関数
+v.dPnCircular_dens <- Vectorize(dPnCircular_dens, "theta") 
+
+# 結果のベクトルを抽出 VAR(p)
+ans_stan_p <- function(fit,P,num,data){
+  # 得られたモデルを抽出する
+  fit_ext <- rstan::extract(fit,permuted=T)
+  # 格納する変数を用意する
+  alpha_1 <- c()
+  # Const parameter
+  alpha_0 = matrix(c(fit_ext$alpha_0[,1] %>% mean(),fit_ext$alpha_0[,2] %>% mean()),ncol=1)
+  # Beta parameter
+  for(i in 1:P){
+    tmp <- matrix(c(fit_ext$alpha_1[,1,2*i-1] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean(),
+                    fit_ext$alpha_1[,2,2*i-1] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean()),ncol=2)
+    alpha_1 <- cbind(alpha_1, tmp)
+  }
+  # Variance-Covariance matrix
+  Sigma_hat = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
+                       fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),ncol=2)
+  # Sigma_hat = matrix(c(1,0,0,1),ncol=2) # for model3
+  # Estimate condition mean 
+  mu_hat <- matrix(0, ncol=2, nrow=(num-P) )
+  for(i in (1+P):num){
+    pre <- c(); # p期前のcos(theta), sin(theta)を格納する
+    for (k in 1:P) {
+      tmp <- matrix(c(cos(data[i-k]),sin(data[i-k])),ncol=1)
+      pre <- rbind(pre,tmp)
+    }
+    mu_hat[i-P,] <- alpha_0 + ( alpha_1 %*% pre )
+  }
+  # Estimate moment
+  fn.sin<-function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin func
+  fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # cos func
+  # Estimate parameter
+  len <- dim(mu_hat)[1]; sin.mom <- cos.mom<- c();
+  # 
+  for(i in 1:len){
+    sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi,
+                            mu=mu_hat[i,], Sigma=Sigma_hat)$value
+    cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi,
+                            mu=mu_hat[i,], Sigma=Sigma_hat)$value
+  }
+  pred <- atan2(sin.mom,cos.mom)
+  return(pred)  
+}
+# output predict value
+pred_value <- function(fit,p,dat){
+  pred <- ans_stan_p(fit, P=p, num = length(dat),data=dat) # パラメータ推定値を用いて, 予測
+  matplot(cbind(dat[-c(1:p)],pred),type="l")
 }
