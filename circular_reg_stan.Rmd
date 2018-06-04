@@ -27,6 +27,7 @@ opts_chunk$set(echo=TRUE,
 opts_knit$set(width=75)
 ```
 
+
 # install package
 
 ```{r,echo=FALSE}
@@ -94,20 +95,21 @@ ans_stan_p <- function(fit,P,num,data){
   fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # cos func
   # Estimate parameter
   len <- dim(mu_hat)[1]; sin.mom <- cos.mom<- c();
-  # 
+  # Estimate expected value
   for(i in 1:len){
    sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi,
                            mu=mu_hat[i,], Sigma=Sigma_hat)$value
    cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi,
                            mu=mu_hat[i,], Sigma=Sigma_hat)$value
   }
+  # Estimate predict theta value
   pred <- atan2(sin.mom,cos.mom)
   return(pred)  
 }
 # output predict value
 pred_value <- function(fit,p,dat){
   pred <- ans_stan_p(fit, P=p, num = length(dat),data=dat) # パラメータ推定値を用いて, 予測
-  matplot(cbind(dat[-c(1:p)],pred),type="l")
+  matplot(cbind(dat[-c(1:p)],pred),type="l") # 真値の初期値をずらす
 }
 ```
 
@@ -122,6 +124,47 @@ wind_data <- wind %>%
   mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
   dplyr::select(-tmp) %>% 
   mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))
+```
+
+# check stan funcion
+
+stan 尤度関数が機能しているか確認する
+
+```{r}
+rstan::expose_stan_functions("stan/test.stan")
+```
+
+```{r likelihood}
+# Projected Normal AutoRegressive Process
+l_ <- function(arg){
+ num <- length(data)
+ a0 <- arg[1]; b0 <- arg[4];
+ a11 <- arg[2]; a12 <- arg[3]
+ b11 <- arg[5]; b12 <- arg[6]
+ sigma1 <- exp(arg[7]); sigma2 <- exp(arg[8]); rho <- tanh(arg[9]) # 数値を-1 ~ 1に抑え込む
+ sigma <- matrix(c(sigma1^2, rho*sigma1*sigma2,rho*sigma1*sigma2, sigma2^2 ),2,2)
+ alpha_0 =  matrix(c(a0,b0), ncol=1); alpha_1 = matrix(c(a11,b11, a12,b12), ncol=2, nrow=2); 
+ likelihood <- c(0) 
+ for(i in 2:num){
+   theta = data[i]; pre_theta = data[i-1]; 
+   likelihood <- append(likelihood, circular_reg_lpdf(theta, pre_theta, alpha_0, alpha_1, sigma))
+ }
+ # print(solve(Sig)) #debug用
+ # print(arg[8]) #debug用
+ - sum(likelihood) # -1を乗じることで, 最大化問題を最小化問題にする.
+}
+```
+
+```{r}
+#初期値の目安はcircular-circular regressionで
+lm.out <- lm.circular(y=wind_data$theta_real[-1], x=wind_data$theta_real[-310],order=1 )
+par <- c(lm.out$coefficients[,1], 
+         lm.out$coefficients[,2],
+         log(var(cos(lm.out$residuals))), # 不偏分散 cos
+         log(var(sin(lm.out$residuals))), # 不偏分散 sin
+         atanh(cor(cos(lm.out$residuals),sin(lm.out$residuals)))) #相関係数
+data=wind_data$theta_real
+l_(par)
 ```
 
 # stan code
