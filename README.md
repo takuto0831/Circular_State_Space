@@ -40,8 +40,10 @@ We introduce a new approach to a circular time series modeling that based on the
 └── stan
     ├── circularVAR_1.stan (VAR(1) model, errorあり, p次元に拡張したモデルあるので不要)
     ├── circularVAR_p.stan (VAR(p) model, const vectorに制約を付与) 
-    ├── circularVAR_p_.stan (VAR(p) model, 平均方向のベクトルに制約を付与)
+    ├── circularVAR_p_.stan (VAR(p) model, 平均方向のベクトルに制約を付与,-1~1の範囲)
+    ├── circularVAR_p_norm.stan (VAR(p) model, 平均方向のベクトルのノルムを1にする, 不要) 
+    ├── circularVAR_p_I.stan ( VAR(p) model, 分散構造を単位行列とする)
     ├── test.stan (test code1, 不要)
     └── test1.stan (test code 2, 不要)
 ```
-i
+
