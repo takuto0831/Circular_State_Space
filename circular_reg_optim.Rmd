@@ -138,9 +138,9 @@ par <- c(lm.out$coefficients[,1],
          log(var(cos(lm.out$residuals))), # 不偏分散 cos
          log(var(sin(lm.out$residuals))), # 不偏分散 sin
          atanh(cor(cos(lm.out$residuals),sin(lm.out$residuals)))) #相関係数
-# l(par, data=wind_data$theta_real) #尤度
+data=wind_data$theta_real
+l(par) #尤度
 ```
-
 
 ## solnp 関数
 
