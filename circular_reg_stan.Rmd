@@ -131,7 +131,6 @@ model2 : 全ての係数パラメータに-1 ~ 1の制約を付与
 
 ## stan test
 
-
 ```{r set data list, eval=FALSE}
 d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
 d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
