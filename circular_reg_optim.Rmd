@@ -226,6 +226,9 @@ Sig_ <- matrix( c( fit_pena$par2[7]^2, fit_pena$par2[7]*fit_pena$par2[8]*fit_pen
 ```
 
 ## 結果
+```{r}
+par
+```
 
 ```{r}
 # 罰則なし
