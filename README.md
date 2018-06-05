@@ -15,6 +15,15 @@ We introduce a new approach to a circular time series modeling that based on the
 
 時系列モデルの構造をPN2(mu,Sigma)と仮定した時, どちらかの変数になんらかの制約を入れる入れる必要がある. パラメータが爆発的に増加する
 
+# Penalty function method 
+
+`circularVAR_p_penalty.stan'におけるpenalty function について記載する.
+
+罰則項一覧: 
+- fabs(mu' * mu - 1) : ノルムの絶対値を1に近づける
+- square(mu' * mu - 1) : ノルムの二乗誤差を0に近づける
+- (mu' * mu) : パラメーターを0付近にする, Lasso 
+
 # Tree
 
 ```
