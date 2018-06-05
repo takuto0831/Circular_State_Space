@@ -189,23 +189,28 @@ d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # 
 # compile model
 model1 <- stan_model('stan/circularVAR_p.stan')
 model2 <- stan_model('stan/circularVAR_p_.stan')
-model3 <- stan_model('stan/circularVAR_p_I.stan')
+# model3 <- stan_model('stan/circularVAR_p_I.stan') # 趣旨とずれる
 model4 <- stan_model('stan/circularVAR_p_penalty.stan')
+model5 <- stan_model('stan/circularVAR_p_noconst.stan')
+
 # fitting stan model
 fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
-fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
+fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1, thin = 5) # Execute model
 fit2_2 <- sampling(model2, data = d.dat2, iter=1000, chains=1) # Execute model
 fit1_3 <- sampling(model3, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_3 <- sampling(model3, data = d.dat2, iter=1000, chains=1) # Execute model
-fit1_4 <- sampling(model4, data = c(d.dat1,lambda=0.5), iter=500, chains=1) # Execute model
+fit1_4 <- sampling(model4, data = c(d.dat1,lambda=0), iter=2000, chains=1) # Execute model
 fit2_4 <- sampling(model4, data = c(d.dat2,lambda=0.01), iter=1000, chains=1) # Execute model
-fit3_4 <- sampling(model4, data = c(d.dat3,lambda=0.5), iter=1000, chains=1) # Execute model
+fit3_4 <- sampling(model4, data = c(d.dat3,lambda=0.01), iter=1000, chains=1) # Execute model
 fit4_4 <- sampling(model4, data = c(d.dat4,lambda=1), iter=1000, chains=1) # Execute model
 
 # lambda = 0とすれば, 罰則なしの最尤法
-fit4_2 <- sampling(model4, data = c(d.dat4,lambda=0), iter=1000, chains=1) # Execute model
 fit3_2 <- sampling(model4, data = c(d.dat3,lambda=0), iter=1000, chains=1) # Execute model
+fit4_2 <- sampling(model4, data = c(d.dat4,lambda=0), iter=1000, chains=1) # Execute model
+
+fit2_5 <- sampling(model5, data = c(d.dat2,lambda=0.01), iter=1000, chains=1) # Execute model
+fit3_5 <- sampling(model5, data = c(d.dat3,lambda=0), iter=1000, chains=1) # Execute model
 ```
 
 ## stan parallel processing code
@@ -262,6 +267,7 @@ pred_value(fit = fit2_1,p = 2,dat=wind_data$theta_real)
 #model2
 pred_value(fit = fit1_2,p = 1,dat=wind_data$theta_real)
 pred_value(fit = fit2_2,p = 2,dat=wind_data$theta_real)
+pred_value(fit = fit3_2,p = 3,dat=wind_data$theta_real)
 
 #model3
 pred_value(fit = fit1_3,p = 1,dat=wind_data$theta_real) # function 内部 変更の必要あり
@@ -274,13 +280,17 @@ pred_value(fit = fit3_4,p = 3,dat=wind_data$theta_real)
 pred_value(fit = fit4_4,p = 4,dat=wind_data$theta_real)
 
 # model5
-pred_value(fit = fit4_2,p = 4,dat=wind_data$theta_real)
+pred_value(fit = fit2_5,p = 2,dat=wind_data$theta_real)
+pred_value(fit = fit3_5,p = 3,dat=wind_data$theta_real)
+
 ```
 
 # Diagnosis
 
 ```{r,eval=FALSE,include=FALSE}
-shinystan::launch_shinystan(fit4_4)
+shinystan::launch_shinystan(fit3_2)
+get_posterior_mean(fit1_2)
+get_inits(fit1_2)
 ```
 
 ```{r,eval=FALSE,include=FALSE}
@@ -319,29 +329,48 @@ log_lik2 <- extract_log_lik(fit2_2,"log_likelihood")
 loo::waic(log_lik2)
 
 # model3
-log_lik1 <- extract_log_lik(fit1_3,"log_likelihood")
-loo::waic(log_lik1)
-log_lik2 <- extract_log_lik(fit2_3,"log_likelihood")
-loo::waic(log_lik2)
+extract_log_lik(fit3_2,"log_likelihood") %>% loo::waic()
+extract_log_lik(fit3_5,"log_likelihood") %>% loo::waic()
 
 # model4
 log_lik1 <- extract_log_lik(fit4_2,"log_likelihood")
 loo::waic(log_lik1)
 log_lik2 <- extract_log_lik(fit4_4,"log_likelihood")
 loo::waic(log_lik2)
+
+# model5
+extract_log_lik(fit2_5,"log_likelihood") %>% loo::waic()
+extract_log_lik(fit3_5,"log_likelihood") %>% loo::waic()
 ```
 
+```{r}
+log_lik <- c()
+a <- extract_log_lik(fit1_2,"log_likelihood")
+for( i in 1:dim(a)[1]) {
+  log_lik <- append(log_lik,a[i,] %>% sum()) 
+}
+max(log_lik)
+min(log_lik)
+mean(log_lik)
+hist(log_lik)
+```
 ## for knitr 
 
 ```{r}
 # set value
 model <- stan_model('stan/circularVAR_p_penalty.stan')
 d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
-for(i in 1:20){
-  fit <- sampling(model, data = c(d.dat2,lambda=0.1*i, iter=1000, chains=1)) # Execute model
-  sprintf("lambda=%.2f",0.1*i)
-  extract_log_lik(fit,"log_likelihood") %>% loo::waic() 
+for(i in 1:2){
+  fit <- sampling(model, data = c(d.dat2,lambda=0.1*i), iter=1000, chains=1) # Execute model
+  sprintf("lambda=%.2f",0.1*i) %>% print()
+  extract_log_lik(fit,"log_likelihood") %>% loo::waic() %>% print()
   pred_value(fit = fit,p = 2,dat=wind_data$theta_real)
 }
 ```
+
+
+
+
+
+
 
