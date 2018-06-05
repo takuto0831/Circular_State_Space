@@ -71,7 +71,33 @@ l <- function(arg){
                         -log(A) - 0.5*log(det(Sig)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))))
  }
  # print(solve(Sig)) #debug用
- # print(arg[8]) #debug用
+ # print(pnorm(tmp,0,1)/dnorm(tmp,0,1)) #debug用
+ - sum(likelihood) # -1を乗じることで, 最大化問題を最小化問題にする.
+}
+
+l_pena <- function(arg){
+ num <- length(data)
+ a0 <- arg[1]; b0 <- arg[4];
+ a11 <- arg[2]; a12 <- arg[3]
+ b11 <- arg[5]; b12 <- arg[6]
+ sigma1 <- exp(arg[7]) # 非負値
+ sigma2 <- exp(arg[8]) # 非負値
+ rho <- tanh(arg[9]) # 数値を-1 ~ 1に抑え込む
+ Sig <- matrix(c(sigma1^2, rho*sigma1*sigma2,rho*sigma1*sigma2, sigma2^2 ),2,2)
+ likelihood <- c(0)
+ for(i in 2:num){
+   u = matrix(c(cos(data[i]),sin(data[i])),ncol=1)
+   mu = matrix(c(a0,b0), ncol=1) + matrix(c(a11,b11, a12,b12), ncol=2, nrow=2) %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)
+   A = t(u) %*% solve(Sig) %*% u
+   B = t(u) %*% solve(Sig) %*% mu
+   C = (-1/2) * (t(mu) %*% solve(Sig) %*% mu)
+   tmp = B/sqrt(A)
+   # 尤度を計算する
+   likelihood <- append(likelihood,
+                        -log(A) - 0.5*log(det(Sig)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))) - 0.01 * (t(mu) %*% mu - 1)^2)
+ }
+ # print(solve(Sig)) #debug用
+ # print(pnorm(tmp,0,1)/dnorm(tmp,0,1)) #debug用
  - sum(likelihood) # -1を乗じることで, 最大化問題を最小化問題にする.
 }
 ```
@@ -140,6 +166,7 @@ par <- c(lm.out$coefficients[,1],
          atanh(cor(cos(lm.out$residuals),sin(lm.out$residuals)))) #相関係数
 data=wind_data$theta_real
 l(par) #尤度
+l_pena(par)
 ```
 
 ## solnp 関数
@@ -183,19 +210,30 @@ matplot(cbind(wind_data$theta_real[-c(1:1)], mu.pred),type="l")
 ```{r optimization1}
 data = wind_data$theta_real
 fit <- optim(par, l, control=list(maxit=20000))
+fit_pena <- optim(par, l_pena, control=list(maxit=20000))
+
 #変換したパラメータをもとに戻す
 fit$par2 <- c(fit$par[1:6],exp(fit$par[7:8]), tanh(fit$par[9])) 
-
 mu.hat <- cond.mean(par= fit$par2, data= wind_data$theta_real)
 Sig <- matrix( c( fit$par2[7]^2, fit$par2[7]*fit$par2[8]*fit$par2[9],
                   fit$par2[7]*fit$par2[8]*fit$par2[9], fit$par2[8]^2), ncol=2, nrow=2)
+# 変換したパラメータを元に戻す, 罰則付き関数
+fit_pena$par2 <- c(fit_pena$par[1:6],exp(fit_pena$par[7:8]), tanh(fit_pena$par[9])) 
+mu.hat_ <- cond.mean(par= fit_pena$par2, data= wind_data$theta_real)
+Sig_ <- matrix( c( fit_pena$par2[7]^2, fit_pena$par2[7]*fit_pena$par2[8]*fit_pena$par2[9],
+                  fit_pena$par2[7]*fit_pena$par2[8]*fit_pena$par2[9], fit_pena$par2[8]^2), ncol=2, nrow=2)
+
 ```
 
 ## 結果
 
 ```{r}
-fit # paramter
-Sig # 分散共分散行列
+# 罰則なし
+fit
+Sig
+# 罰則付き
+fit_pena # paramter
+Sig_ # 分散共分散行列
 ```
 
 predictionを入れてみる.
@@ -203,6 +241,9 @@ sinモーメントとcosモーメントを計算しないといけない.
 
 ```{r prediction}
 mu.pred <- trigonometric.moment(mu=mu.hat,Sigma=Sig)
+matplot(cbind(wind_data$theta_real[-c(1:1)], mu.pred),type="l")
+
+mu.pred <- trigonometric.moment(mu=mu.hat_,Sigma=Sig_)
 matplot(cbind(wind_data$theta_real[-c(1:1)], mu.pred),type="l")
 ```
 
