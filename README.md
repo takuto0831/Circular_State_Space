@@ -29,7 +29,9 @@ We introduce a new approach to a circular time series modeling that based on the
 
 # stan code
 
-- circularVAR_p.stan : optim関数などの最適化手法と同等の結果を得られるようにすれば, 各パラメータに対して必要なpriorがわかるかも
+- circularVAR_p_.stan : optim関数などの最適化手法と同等の結果を得られるようにすれば, 各パラメータに対して必要なpriorがわかるかも
+
+- circularVAR_noconst.stan : 定数項を除いたもの, まあまあ綺麗に書ける
 
 # Tree
 
