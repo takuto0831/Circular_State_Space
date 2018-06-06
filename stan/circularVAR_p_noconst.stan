@@ -41,12 +41,11 @@ transformed parameters{
 
 model{
   // 全てのパラメータの事前分布を独立な正規分布で仮定する
-  // alpha_0 ~ multi_normal(rep_vector(0,2),diag_matrix(rep_vector(10,2))); // ~N_2((0,0),(1,0,0,1) )
   for(i in 1:2*P){
-    alpha_1[1,i] ~ normal(0,0.1); // N(0,1)
-    alpha_1[2,i] ~ normal(0,0.1); // N(0,1)
+    alpha_1[1,i] ~ normal(0,10); // N(0,1)
+    alpha_1[2,i] ~ normal(0,10); // N(0,1)
   }
-  phi1 ~ normal(0,0.1); phi2 ~ normal(0,0.1); phi3 ~ normal(0,0.1);
+  phi1 ~ normal(0,0.01); phi2 ~ normal(0,0.01); phi3 ~ normal(0,1);
   for(n in 1+P:N){
     vector[P] pre_theta; // P期前までのtheta ベクトルを用意する.
     for(k in 1:P){

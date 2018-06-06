@@ -10,8 +10,7 @@ functions{
     u[1] = cos(theta); u[2] = sin(theta);
     A = quad_form(inverse_spd(sigma), u); B = u' * inverse_spd(sigma) * mu;
     C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
-    p = - log(A) - 0.5*log(determinant(sigma)) + C
-    + log(1+(D * normal_cdf(D,0,1)/(exp(-D^2 /2)/sqrt(2*pi()))));    
+    p = - log(A) - 0.5*log(determinant(sigma)) + C + log(1+(D * (normal_cdf(D,0,1)/ (exp(-D^2 /2)/sqrt(2*pi())))));    
     return p;
   }
 }
@@ -32,19 +31,18 @@ parameters{
 
 transformed parameters{
   cov_matrix[2] sigma;
-  sigma[1,1] = exp(phi1)^2; sigma[1,2] = phi3*exp(phi1)*exp(phi2);
-  sigma[2,1] = phi3*exp(phi1)*exp(phi2); sigma[2,2] = exp(phi2)^2;
+  sigma[1,1] = exp(phi1)^2; sigma[1,2] = tanh(phi3)*exp(phi1)*exp(phi2);
+  sigma[2,1] = tanh(phi3)*exp(phi1)*exp(phi2); sigma[2,2] = exp(phi2)^2;
 }
 
 model{
   // 全てのパラメータの事前分布を独立な正規分布で仮定する
-  // alpha_0 ~ multi_normal(rep_vector(0,2),diag_matrix(rep_vector(10,2))); // ~N_2((0,0),(1,0,0,1) )
   for(i in 1:2*P){
-    alpha_1[1,i] ~ normal(0,1); // N(0,1)
-    alpha_1[2,i] ~ normal(0,1); // N(0,1)
+    alpha_1[1,i] ~ normal(0,10); // N(0,1)
+    alpha_1[2,i] ~ normal(0,10); // N(0,1)
   }
   alpha_0[1] ~ normal(0,0.1); alpha_0[2] ~ normal(0,0.1);
-  phi1 ~ normal(0,0.1); phi2 ~ normal(0,0.1); phi3 ~ normal(0,1);
+  phi1 ~ normal(0,0.01); phi2 ~ normal(0,0.01); phi3 ~ normal(0,1);
   for(n in 1+P:N){
     vector[P] pre_theta; // P期前までのtheta ベクトルを用意する.
     for(k in 1:P){
