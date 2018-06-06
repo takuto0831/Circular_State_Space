@@ -12,12 +12,13 @@ R. Jammalamadaka, TOPICS IN CIRCULAR STATISTICS, Circular Correlation and regres
 We introduce a new approach to a circular time series modeling that based on the projected normal distributions with circular-circular regression. 
  
 # memo 
-
-時系列モデルの構造をPN2(mu,Sigma)と仮定した時, どちらかの変数になんらかの制約を入れる入れる必要がある. パラメータが爆発的に増加する
+ 
+- 時系列モデルの構造をPN2(mu,Sigma)と仮定した時, どちらかの変数になんらかの制約を入れる入れる必要がある. パラメータが爆発的に増加する
+- 時系列モデルの平均のような, 中心線はalpha_0の角度 (得られた値を消去し, c(0,0)として計算してみた)
 
 # Penalty function method 
 
-`circularVAR_p_penalty.stan'におけるpenalty function について記載する.
+`circularVAR_p_penalty.stan`におけるpenalty function について記載する.
 
 罰則項一覧: 
 - fabs(mu' * mu - 1) : ノルムの絶対値を1に近づける
@@ -25,6 +26,12 @@ We introduce a new approach to a circular time series modeling that based on the
 - (mu' * mu) : パラメーターを0付近にする, Lasso 
 
 入力の`lambda`を0とすれば, 罰則なしとして計算可能
+
+# stan code
+
+- circularVAR_p.stan : optim関数などの最適化手法と同等の結果を得られるようにすれば, 各パラメータに対して必要なpriorがわかるかも
+
+-
 
 # Tree
 
