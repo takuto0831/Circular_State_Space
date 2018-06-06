@@ -31,8 +31,6 @@ We introduce a new approach to a circular time series modeling that based on the
 
 - circularVAR_p.stan : optim関数などの最適化手法と同等の結果を得られるようにすれば, 各パラメータに対して必要なpriorがわかるかも
 
--
-
 # Tree
 
 ```
