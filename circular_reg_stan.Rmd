@@ -213,8 +213,9 @@ fit3_3 <- sampling(model3, data = c(d.dat3,lambda=0.1), iter=1000, chains=1) # E
 ## stan parallel processing code
 
 ```{r stan save model and fit,eval=FALSE,include=FALSE}
-saveRDS(model1, "model/circularVAR_p_1.rds") # save model
-saveRDS(model2, "model/circularVAR_p_2.rds") # save model
+saveRDS(model1, "model/circularVAR_p_.rds") # save model
+saveRDS(model2, "model/circularVAR_p_noconst.rds") # save model
+saveRDS(model3, "model/circularVAR_p_penalty.rds") # save model
 save(fit1_1, file="fit/circularVAR_1_1.rda")# save fit
 save(fit2_1, file="fit/circularVAR_2_1.rda")# save fit
 save(fit1_2, file="fit/circularVAR_1_2.rda")# save fit
@@ -222,8 +223,9 @@ save(fit2_2, file="fit/circularVAR_2_2.rda")# save fit
 ```
 
 ```{r stan load model and fit,eval=FALSE,include=FALSE}
-model1 <- readRDS("model/circularVAR_p_1.rds") # load model
-model2 <- readRDS("model/circularVAR_p_2.rds") # load model
+model1 <- readRDS("model/circularVAR_p_.rds") # load model
+model2 <- readRDS("model/circularVAR_p_noconst.rds") # load model
+model3 <- readRDS("model/circularVAR_p_penalty.rds") # load model
 load("fit/circularVAR_1_1.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_2_1.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_1_2.rda", verbose = TRUE) # load fit
@@ -279,6 +281,13 @@ fit3_3 # model3
 
 # output predict value
 
+
+```{r}
+pred_value(fit = fit1,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit2,p = 1,dat=wind_data$theta_real)
+
+```
+
 ```{r,eval=FALSE,include=FALSE}
 # model1
 pred_value(fit = fit1_1,p = 1,dat=wind_data$theta_real)
@@ -309,14 +318,14 @@ pred_value(fit = fit2_3,p = 2,dat=wind_data$theta_real) # function 内部 変更
 # Diagnosis
 
 ```{r,eval=FALSE,include=FALSE}
-shinystan::launch_shinystan(fit1_2)
+shinystan::launch_shinystan(fit1)
 get_posterior_mean(fit1_2)
 get_inits(fit1_2)
 ```
 
 ```{r}
 log_lik <- c()
-a <- extract_log_lik(fit1_5,"log_likelihood")
+a <- extract_log_lik(fit1,"log_likelihood")
 for( i in 1:dim(a)[1]) {
   log_lik <- append(log_lik,a[i,] %>% sum()) 
 }
