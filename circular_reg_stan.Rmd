@@ -318,7 +318,7 @@ pred_value(fit = fit2_3,p = 2,dat=wind_data$theta_real) # function 内部 変更
 # Diagnosis
 
 ```{r,eval=FALSE,include=FALSE}
-shinystan::launch_shinystan(fit1)
+shinystan::launch_shinystan(fit2)
 get_posterior_mean(fit1_2)
 get_inits(fit1_2)
 ```
