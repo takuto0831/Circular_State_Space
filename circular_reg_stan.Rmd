@@ -181,56 +181,36 @@ model2 : 全ての係数パラメータに-1 ~ 1の制約を付与
 d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
 d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
 d.dat3 <- list(N=length(wind_data$theta_real),P=3,theta=wind_data$theta_real) # for VAR(3)
-d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # for VAR(3)
+d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # for VAR(4)
 ```
 
 ```{r stan test, eval=FALSE,include=FALSE}
 #fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
 #fit<-stan(file='stan/test1.stan',data=d.dat,iter=4000,chains=1) # 分散共分散行列の過程
 # compile model
-model1 <- stan_model('stan/circularVAR_p.stan')
-model2 <- stan_model('stan/circularVAR_p_.stan')
+# model1 <- stan_model('stan/circularVAR_p.stan')
 # model3 <- stan_model('stan/circularVAR_p_I.stan') # 趣旨とずれる
-model4 <- stan_model('stan/circularVAR_p_penalty.stan')
-model5 <- stan_model('stan/circularVAR_p_noconst.stan')
+
+model1 <- stan_model('stan/circularVAR_p_.stan') # 変化なし
+model2 <- stan_model('stan/circularVAR_p_noconst.stan') # no const 
+model3 <- stan_model('stan/circularVAR_p_penalty.stan') # 制約なし
 
 # fitting stan model
-# fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
-# fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
+fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
+fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
 fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_2 <- sampling(model2, data = d.dat2, iter=1000, chains=1) # Execute model
 fit3_2 <- sampling(model2, data = d.dat3, iter=1000, chains=1) # Execute model
-
-fit1_3 <- sampling(model3, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2_3 <- sampling(model3, data = d.dat2, iter=1000, chains=1) # Execute model
-fit1_4 <- sampling(model4, data = c(d.dat1,lambda=0), iter=2000, chains=1) # Execute model
-fit2_4 <- sampling(model4, data = c(d.dat2,lambda=0.01), iter=1000, chains=1) # Execute model
-fit3_4 <- sampling(model4, data = c(d.dat3,lambda=0.01), iter=1000, chains=1) # Execute model
-fit4_4 <- sampling(model4, data = c(d.dat4,lambda=1), iter=1000, chains=1) # Execute model
-fit1_5 <- sampling(model5, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2_5 <- sampling(model5, data = d.dat2, iter=1000, chains=1) # Execute model
-fit3_5 <- sampling(model5, data = d.dat3, iter=1000, chains=1) # Execute model
-
-# lambda = 0とすれば, 罰則なしの最尤法
-fit3_2 <- sampling(model4, data = c(d.dat3,lambda=0), iter=1000, chains=1) # Execute model
-fit4_2 <- sampling(model4, data = c(d.dat4,lambda=0), iter=1000, chains=1) # Execute model
-
-
+fit1_3 <- sampling(model3, data = c(d.dat1,lambda=0.01), iter=1000, chains=1) # Execute model
+fit2_3 <- sampling(model3, data = c(d.dat2,lambda=0.1), iter=1000, chains=1) # Execute model
+fit3_3 <- sampling(model3, data = c(d.dat3,lambda=0.1), iter=1000, chains=1) # Execute model
+# fit4_4 <- sampling(model4, data = c(d.dat4,lambda=1), iter=1000, chains=1) # Execute model
+# fit1_5 <- sampling(model5, data = d.dat1, iter=1000, chains=1) # Execute model
+# fit2_5 <- sampling(model5, data = d.dat2, iter=1000, chains=1) # Execute model
+# fit3_5 <- sampling(model5, data = d.dat3, iter=1000, chains=1) # Execute model
 ```
 
 ## stan parallel processing code
-
-```{r stan Parallel processing, eval=FALSE,include=FALSE}
-rstan_options(auto_write=TRUE) # auto save
-options(mc.cores=parallel::detectCores()) # multi core
-
-# model <- stan_model('stan/circularVAR_p.stan') # compile
-fit <- sampling(model4, 
-                data = c(d.dat2,lambda=0.5),
-                iter = 5000,
-                chains = 4,
-                thin =2)
-```
 
 ```{r stan save model and fit,eval=FALSE,include=FALSE}
 saveRDS(model1, "model/circularVAR_p_1.rds") # save model
@@ -250,6 +230,41 @@ load("fit/circularVAR_1_2.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_2_2.rda", verbose = TRUE) # load fit
 ```
 
+```{r stan Parallel processing, eval=FALSE,include=FALSE}
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+
+# model <- stan_model('stan/circularVAR_p.stan') # compile
+fit1 <- sampling(model1, 
+                data = d.dat1,
+                iter = 5000,
+                chains = 4,
+                thin = 5)
+```
+
+```{r stan Parallel processing, eval=FALSE,include=FALSE}
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+
+# model <- stan_model('stan/circularVAR_p.stan') # compile
+fit2 <- sampling(model2, 
+                data = d.dat1,
+                iter = 5000,
+                chains = 4,
+                thin = 5)
+```
+
+```{r stan Parallel processing, eval=FALSE,include=FALSE}
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+
+# model <- stan_model('stan/circularVAR_p.stan') # compile
+fit3 <- sampling(model3, 
+                data = c(d.dat1,lambda=0.01),
+                iter = 5000,
+                chains = 4,
+                thin =2)
+```
 # output fit paremter
 
 ```{r,eval=FALSE,include=FALSE}
@@ -258,16 +273,16 @@ fit1_1 # model1, VAR(1)model
 fit2_1 # model1, VAR(2)model
 fit1_2 # model2, VAR(1)model
 fit2_2 # model2, VAR(2)model
-fit1_4 # model4
-fit3_4 # model4
+fit1_3 # model3
+fit3_3 # model3
 ```
 
 # output predict value
 
 ```{r,eval=FALSE,include=FALSE}
 # model1
-# pred_value(fit = fit1_1,p = 1,dat=wind_data$theta_real)
-# pred_value(fit = fit2_1,p = 2,dat=wind_data$theta_real)
+pred_value(fit = fit1_1,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit2_1,p = 2,dat=wind_data$theta_real)
 
 #model2
 pred_value(fit = fit1_2,p = 1,dat=wind_data$theta_real)
@@ -278,16 +293,16 @@ pred_value(fit = fit3_2,p = 3,dat=wind_data$theta_real)
 pred_value(fit = fit1_3,p = 1,dat=wind_data$theta_real) # function 内部 変更の必要あり
 pred_value(fit = fit2_3,p = 2,dat=wind_data$theta_real) # function 内部 変更の必要あり
 
-#model4
-pred_value(fit = fit1_4,p = 1,dat=wind_data$theta_real)
-pred_value(fit = fit2_4,p = 2,dat=wind_data$theta_real)
-pred_value(fit = fit3_4,p = 3,dat=wind_data$theta_real)
-pred_value(fit = fit4_4,p = 4,dat=wind_data$theta_real)
-
-# model5
-pred_value(fit = fit1_5,p = 1,dat=wind_data$theta_real)
-pred_value(fit = fit2_5,p = 2,dat=wind_data$theta_real)
-pred_value(fit = fit3_5,p = 3,dat=wind_data$theta_real)
+# #model4
+# pred_value(fit = fit1_4,p = 1,dat=wind_data$theta_real)
+# pred_value(fit = fit2_4,p = 2,dat=wind_data$theta_real)
+# pred_value(fit = fit3_4,p = 3,dat=wind_data$theta_real)
+# pred_value(fit = fit4_4,p = 4,dat=wind_data$theta_real)
+# 
+# # model5
+# pred_value(fit = fit1_5,p = 1,dat=wind_data$theta_real)
+# pred_value(fit = fit2_5,p = 2,dat=wind_data$theta_real)
+# pred_value(fit = fit3_5,p = 3,dat=wind_data$theta_real)
 
 ```
 
