@@ -16,9 +16,13 @@ functions{
 }
   
 data{
+  // data paramter
   int N; // sample size
   int P; // VAR(P) 
   real<lower=-pi(),upper=pi()> theta[N]; // data
+  // covariance paramter
+  real para_alpha_1; real para_alpha_0;
+  real para_sig; real para_rho;
 }
 
 parameters{
@@ -36,13 +40,13 @@ transformed parameters{
 }
 
 model{
-  // 全てのパラメータの事前分布を独立な正規分布で仮定する
+  // パラメータの事前分布の分散の値も入力データとする
   for(i in 1:2*P){
-    alpha_1[1,i] ~ normal(0,10); // N(0,1)
-    alpha_1[2,i] ~ normal(0,10); // N(0,1)
+    alpha_1[1,i] ~ normal(0,para_alpha_1); // N(0,1)
+    alpha_1[2,i] ~ normal(0,para_alpha_1); // N(0,1)
   }
-  alpha_0[1] ~ normal(0,0.1); alpha_0[2] ~ normal(0,0.1);
-  phi1 ~ normal(0,0.01); phi2 ~ normal(0,0.01); phi3 ~ normal(0,1);
+  alpha_0[1] ~ normal(0,para_alpha_0); alpha_0[2] ~ normal(0,para_alpha_0);
+  phi1 ~ normal(0,para_sig); phi2 ~ normal(0,para_sig); phi3 ~ normal(0,para_rho);
   for(n in 1+P:N){
     vector[P] pre_theta; // P期前までのtheta ベクトルを用意する.
     for(k in 1:P){
