@@ -44,6 +44,7 @@ library(rstan)
 library(MCMCpack)
 library(loo)
 library(ggmcmc)
+library(magrittr)
 ```
 
 # Function
@@ -74,8 +75,8 @@ ans_stan_p <- function(fit,P,num,data){
   # alpha_0 = matrix(c(0,0),ncol = 1) ######################### debug ######################
   # Beta parameter
   for(i in 1:P){
-    tmp <- matrix(c(fit_ext$alpha_1[,1,2*i-1] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean(),
-                    fit_ext$alpha_1[,2,2*i-1] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean()),ncol=2)
+    tmp <- matrix(c(fit_ext$alpha_1[,1,(2*i-1)] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean(),
+                    fit_ext$alpha_1[,2,(2*i-1)] %>% mean(),fit_ext$alpha_1[,2,2*i] %>% mean()),2,2)
     alpha_1 <- cbind(alpha_1, tmp)
   }
   # Variance-Covariance matrix
@@ -125,7 +126,36 @@ wind_data <- wind %>%
   data.frame(t = seq(1,310,1), tmp=.) %>% # put label
   mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
   dplyr::select(-tmp) %>% 
-  mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))
+  mutate(cos_real = cos(theta_real), sin_real=sin(theta_real)) 
+```
+
+# Basic aggression
+
+```{r}
+# 差分を調べてみる
+wind_dif <- wind_data$theta_real %>% 
+  diff() %>% 
+  data.frame() %>% 
+  mutate(dif = dplyr::if_else(. < -pi, . + 2*pi,
+                              dplyr::if_else(. > pi, . - 2*pi, .)))
+
+ts.plot(wind_dif$dif)
+ts.plot(wind_data$theta_real)
+```
+
+```{r}
+# 散布図
+plot(wind_data$theta_real[1:309],wind_data$theta_real[2:310])
+# 自己相関
+acf(wind_data$theta_real^2)
+```
+
+```{r}
+library(tseries)
+# 相互相関
+ccf(wind_data$cos_real,wind_data$sin_real,type = "correlation")
+# 単位根過程
+adf.test(wind_data$theta_real)
 ```
 
 # check stan funcion
@@ -171,16 +201,13 @@ l_(par)
 
 # stan code
 
-model1 : const paramterにnorm1の制約を付与
-model2 : 全ての係数パラメータに-1 ~ 1の制約を付与
-
 罰則をなくすと, 滑らかになる?
 
 ## stan test
 
-```{r set data list, eval=FALSE}
+```{r set data list, eval=FALSE,include=FALSE}
 d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real,
-               para_alpha_1 = 10, para_alpha_0 = 10, para_sig = 10, para_rho = 10) # for VAR(1)
+               para_alpha_1 = 1000, para_alpha_0 = 1000, para_sig = 1000, para_rho = 1000) # for VAR(1)
 d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
 d.dat3 <- list(N=length(wind_data$theta_real),P=3,theta=wind_data$theta_real) # for VAR(3)
 d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # for VAR(4)

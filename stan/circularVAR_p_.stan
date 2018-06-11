@@ -10,7 +10,8 @@ functions{
     u[1] = cos(theta); u[2] = sin(theta);
     A = quad_form(inverse_spd(sigma), u); B = u' * inverse_spd(sigma) * mu;
     C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
-    p = - log(A) - 0.5*log(determinant(sigma)) + C + log(1+(D * (normal_cdf(D,0,1)/ (exp(-D^2 /2)/sqrt(2*pi())))));    
+    p = - log(A) - 0.5*log(determinant(sigma)) + C + log(1+(D * (normal_cdf(D,0,1)/ (exp(-D^2 /2)/sqrt(2*pi()))))); 
+    print("A=",A,",D=",D,",,C=",C);
     return p;
   }
 }
