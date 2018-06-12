@@ -91,3 +91,20 @@ plot(c(circular(pi/3),circular(5*pi/3)),shrink = 1)
 arrows.circular(c(circular(pi/3),circular(5*pi/3)))
 arrows.circular(circular(0),col=4,cex=50,lty=5)
 arrows.circular(circular(pi),col=4,cex=50,lty=5)
+
+
+################   使用データのヒストグラム #######################
+library(circular)
+library(tidyverse)
+data(wind) 
+wind_data <- wind %>%  
+  data.frame(t = seq(1,310,1), tmp=.) %>% # put label
+  mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
+  dplyr::select(-tmp) %>% 
+  mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))
+
+wind_data %>% 
+  ggplot(aes(theta_real)) +
+  geom_histogram(binwidth = 0.2, colour = "black", fill = "grey") + 
+  labs(x="Wind directions in dadians") +
+  theme_bw()
