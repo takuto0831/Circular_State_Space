@@ -112,13 +112,13 @@ ans_stan_p <- function(fit,P,num,data){
   alpha_0 = matrix(c(fit_ext$alpha_0[,1] %>% mean(),fit_ext$alpha_0[,2] %>% mean()),ncol=1)
   # Beta parameter
   for(i in 1:P){
-    tmp <- matrix(c(fit_ext$alpha_1[,1,2*i-1] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean(),
-                    fit_ext$alpha_1[,2,2*i-1] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean()),ncol=2)
+    tmp <- matrix(c(fit_ext$alpha_1[,1,(2*i-1)] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean(),
+                    fit_ext$alpha_1[,2,(2*i-1)] %>% mean(),fit_ext$alpha_1[,2,2*i] %>% mean()),byrow=T,2,2)
     alpha_1 <- cbind(alpha_1, tmp)
   }
   # Variance-Covariance matrix
   Sigma_hat = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
-                       fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),ncol=2)
+                       fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),byrow=T,2,2)
   # Sigma_hat = matrix(c(1,0,0,1),ncol=2) # for model3
   # Estimate condition mean 
   mu_hat <- matrix(0, ncol=2, nrow=(num-P) )
