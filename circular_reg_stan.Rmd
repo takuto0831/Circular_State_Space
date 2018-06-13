@@ -112,6 +112,11 @@ ans_stan_p <- function(fit,P,num,data){
 # output predict value
 pred_value <- function(fit,p,dat){
   pred <- ans_stan_p(fit, P=p, num = length(dat),data=dat) # パラメータ推定値を用いて, 予測
+  data.frame(dif = pred - dat[-c(1:p)] ) %>% 
+    mutate(dif_ = dplyr::if_else(dif < -pi, dif + 2*pi,dplyr::if_else(dif > pi, dif - 2*pi, dif))) %>% # 誤差は必ず -pi ~ pi に含まれる
+    mutate(eps = dif_^2) %>% 
+    summarise(ans = sqrt(mean(eps))) %>% 
+    sprintf("RMSE of VAR(%d) model = %f",p,.) %>%  print() # Root Mean Square Error
   matplot(cbind(dat[-c(1:p)],pred),type="l") # 真値の初期値をずらす
 }
 ```
