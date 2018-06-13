@@ -30,11 +30,9 @@ We introduce a new approach to a circular time series modeling that based on the
 # stan code
 
 - circularVAR_p_.stan : optim関数などの最適化手法と同等の結果を得られるようにすれば, 各パラメータに対して必要なpriorがわかるかも
-
 - circularVAR_noconst.stan : 定数項を除いたもの, まあまあ綺麗に書ける
-
 - circularVAR_penalty.stan : うまく制約を入れれば機能する??
-
+- circularVAR_sigma_I.stan : det(sigma) = 1 の制約のみ,パラメータの増大防げる 
 # Tree
 
 ```
@@ -65,6 +63,7 @@ We introduce a new approach to a circular time series modeling that based on the
     ├── circularVAR_p_I.stan ( VAR(p) model, 分散構造を単位行列とする, 趣旨に反する)
     ├── circularVAR_p_penalty.stan (平均ベクトルが, 単位円周上付近に存在するとして罰則項を与える)
     ├── circularVAR_p_noconst.stan (const vectorを c(0,0)とする, どんな違いがあるのか調べる) 
+    ├── circularVAR_p_sigma_I.stan (det(Sigma)=1として, 制約を置く, その他のパラメータは大きめの正規分布にしてみる) 
     └── test.stan (stan codeをR内で使用する際に, 関数式として使用) 
 ```
 
