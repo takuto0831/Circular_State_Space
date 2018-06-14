@@ -215,12 +215,13 @@ N: データの長さ, P: ラグ次数, theta: theta の実測値
 
 ```{r set data list}
 # paramter の値も初期値として入力できるようにした設定用
-# para_alpha_1 = 1000, para_alpha_0 = 1000, para_sig = 1000, para_rho = 1000) # for VAR(1)
-d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real)
+# para_alpha_1 = 1000, para_alpha_0 = 1000, para_sig = 1000, para_rho = 1000) 
+d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
 d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
 d.dat3 <- list(N=length(wind_data$theta_real),P=3,theta=wind_data$theta_real) # for VAR(3)
 d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # for VAR(4)
 d.dat5 <- list(N=length(wind_data$theta_real),P=5,theta=wind_data$theta_real) # for VAR(5)
+d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) # for VAR(10)
 ```
 
 ```{r stan test, eval=FALSE,include=FALSE}
@@ -246,6 +247,7 @@ fit2_3 <- sampling(model3, data = c(d.dat2,lambda=0.1), iter=1000, chains=1) # E
 fit3_3 <- sampling(model3, data = c(d.dat3,lambda=0.1), iter=1000, chains=1) # Execute model
 fit1_4 <- sampling(model4, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_4 <- sampling(model4, data = d.dat2, iter=1000, chains=1) # Execute model
+fit10_4 <- sampling(model4, data = d.dat10, iter=1000, chains=1) # Execute model
 
 # fit1_5 <- sampling(model5, data = d.dat1, iter=1000, chains=1) # Execute model
 # fit2_5 <- sampling(model5, data = d.dat2, iter=1000, chains=1) # Execute model
@@ -269,6 +271,7 @@ save(fit2_4, file="fit/circularVAR_2_4.rda")# save fit
 save(fit3_4, file="fit/circularVAR_3_4.rda")# save fit
 save(fit4_4, file="fit/circularVAR_4_4.rda")# save fit
 save(fit5_4, file="fit/circularVAR_5_4.rda")# save fit
+save(fit10_4, file="fit/circularVAR_10_4.rda")# save fit
 ```
 
 ```{r stan load model,eval=FALSE,include=FALSE}
@@ -288,6 +291,7 @@ load("fit/circularVAR_2_4.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_3_4.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_4_4.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_5_4.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_10_4.rda", verbose = TRUE) # load fit
 ```
 
 ## stan parallel processing code
@@ -302,6 +306,7 @@ fit2_4 <- sampling(model4, data = d.dat2, iter = 5000, chains = 4, thin = 5)
 fit3_4 <- sampling(model4, data = d.dat3, iter = 5000, chains = 4, thin = 5)
 fit4_4 <- sampling(model4, data = d.dat4, iter = 5000, chains = 4, thin = 5)
 fit5_4 <- sampling(model4, data = d.dat5, iter = 5000, chains = 4, thin = 5)
+fit10_4 <- sampling(model4, data = d.dat10, iter = 5000, chains = 4, thin = 5)
 ```
 
 # output fit paremter
@@ -313,6 +318,7 @@ fit2_4 # model4, VAR(2)model
 fit3_4 # model4, VAR(3)model
 fit4_4 # model4, VAR(4)model
 fit5_4 # model4, VAR(5)model
+fit10_4 # model4, VAR(10)model
 ```
 
 # output predict value
@@ -337,6 +343,8 @@ pred_value(fit = fit2_4,p = 2,dat=wind_data$theta_real)
 pred_value(fit = fit3_4,p = 3,dat=wind_data$theta_real)
 pred_value(fit = fit4_4,p = 4,dat=wind_data$theta_real)
 pred_value(fit = fit5_4,p = 5,dat=wind_data$theta_real)
+pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
+
 # # model5
 # pred_value(fit = fit1_5,p = 1,dat=wind_data$theta_real)
 # pred_value(fit = fit2_5,p = 2,dat=wind_data$theta_real)
@@ -346,7 +354,7 @@ pred_value(fit = fit5_4,p = 5,dat=wind_data$theta_real)
 # Diagnosis
 
 ```{r,eval=FALSE}
-shinystan::launch_shinystan(fit1_4) # 基本的な分析これで全て見れる
+shinystan::launch_shinystan(fit10_4) # 基本的な分析これで全て見れる
 get_posterior_mean(fit1_4) # chainごとのパラメータ見れる
 get_inits(fit1_4) # 要確認
 ```
@@ -370,6 +378,7 @@ extract_likelihood(fit2_4) # VAR(2) model
 extract_likelihood(fit3_4) # VAR(3) model
 extract_likelihood(fit4_4) # VAR(4) model
 extract_likelihood(fit5_4) # VAR(5) model
+extract_likelihood(fit10_4) # VAR(10) model
 ```
 
 # Estimate and waic
@@ -383,7 +392,9 @@ extract_log_lik(fit2_4,"log_likelihood") %>% loo::waic() # VAR(2) model
 extract_log_lik(fit3_4,"log_likelihood") %>% loo::waic() # VAR(3) model
 extract_log_lik(fit4_4,"log_likelihood") %>% loo::waic() # VAR(4) model
 extract_log_lik(fit5_4,"log_likelihood") %>% loo::waic() # VAR(5) model
+extract_log_lik(fit10_4,"log_likelihood") %>% loo::waic() # VAR(10) model
 ```
+
 
 
 ```{r,eval=FALSE,include=FALSE}
