@@ -354,7 +354,7 @@ pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
 # Diagnosis
 
 ```{r,eval=FALSE}
-shinystan::launch_shinystan(fit10_4) # 基本的な分析これで全て見れる
+shinystan::launch_shinystan(fit1_4) # 基本的な分析これで全て見れる
 get_posterior_mean(fit1_4) # chainごとのパラメータ見れる
 get_inits(fit1_4) # 要確認
 ```
@@ -394,8 +394,6 @@ extract_log_lik(fit4_4,"log_likelihood") %>% loo::waic() # VAR(4) model
 extract_log_lik(fit5_4,"log_likelihood") %>% loo::waic() # VAR(5) model
 extract_log_lik(fit10_4,"log_likelihood") %>% loo::waic() # VAR(10) model
 ```
-
-
 
 ```{r,eval=FALSE,include=FALSE}
 # model1
