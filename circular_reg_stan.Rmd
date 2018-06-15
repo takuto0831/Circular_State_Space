@@ -82,12 +82,12 @@ ans_stan_p <- function(fit,P,num,data){
     tmp <- matrix(c(fit_ext$alpha_1[,1,(2*i-1)] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean(),
                     fit_ext$alpha_1[,2,(2*i-1)] %>% mean(),fit_ext$alpha_1[,2,2*i] %>% mean()),byrow=T,2,2)
     alpha_1 <- cbind(alpha_1, tmp)
-    tmp <- matrix(c(fit_ext$alpha_1[,1,(2*i-1)] %>% quantile(0.025),fit_ext$alpha_1[,1,2*i] %>% quantile(0.025),
+    tmp_low <- matrix(c(fit_ext$alpha_1[,1,(2*i-1)] %>% quantile(0.025),fit_ext$alpha_1[,1,2*i] %>% quantile(0.025),
                     fit_ext$alpha_1[,2,(2*i-1)] %>% quantile(0.025),fit_ext$alpha_1[,2,2*i] %>% quantile(0.025)),byrow=T,2,2)
-    alpha_1_low <- cbind(alpha_1_low, tmp)
-    tmp <- matrix(c(fit_ext$alpha_1[,1,(2*i-1)] %>% quantile(0.975),fit_ext$alpha_1[,1,2*i] %>% quantile(0.975),
+    alpha_1_low <- cbind(alpha_1_low, tmp_low)
+    tmp_up <- matrix(c(fit_ext$alpha_1[,1,(2*i-1)] %>% quantile(0.975),fit_ext$alpha_1[,1,2*i] %>% quantile(0.975),
                     fit_ext$alpha_1[,2,(2*i-1)] %>% quantile(0.975),fit_ext$alpha_1[,2,2*i] %>% quantile(0.975)),byrow=T,2,2)
-    alpha_1_up <- cbind(alpha_1_up, tmp)
+    alpha_1_up <- cbind(alpha_1_up, tmp_up)
   }
   # Variance-Covariance matrix
   Sigma = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
@@ -98,6 +98,7 @@ ans_stan_p <- function(fit,P,num,data){
                       fit_ext$sigma[,2,1] %>% quantile(0.975),fit_ext$sigma[,2,2] %>% quantile(0.975)),byrow=T,2,2)
 
   # Estimate condition mean 
+  num = length(data) 
   mu_hat <- mu_hat_low <- mu_hat_up <- matrix(0, ncol=2, nrow=(num-P) )
   for(i in (1+P):num){
     pre <- c(); # p期前のcos(theta), sin(theta)を格納する
@@ -107,29 +108,41 @@ ans_stan_p <- function(fit,P,num,data){
     mu_hat_up[i-P,] <- alpha_0_up + ( alpha_1_up %*% pre )
   }
   # Estimate moment function
-  fn.sin<-function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin func
-  fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # cos func
-  # Estimate sin and cos value
+  fn.sin<- function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin func
+  fn.cos<- function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # cos func
+  fn.theta <- function(x,mu,Sigma) x*v.dPnCircular_dens(theta=x, mu, Sigma) # theta func
+  
+  # # Estimate sin and cos value
+  # len <- dim(mu_hat)[1]; 
+  # sin.mom <- cos.mom <- sin.mom_low <- cos.mom_low <- sin.mom_up <- cos.mom_up <- c();
+  # for(i in 1:len){
+  #  sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
+  #  cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
+  #  sin.mom_low[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
+  #  cos.mom_low[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
+  #  sin.mom_up[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
+  #  cos.mom_up[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
+  # }
+  # # Estimate predict theta value
+  # pred <- atan2(sin.mom,cos.mom)
+  # pred_low <- atan2(sin.mom_low,cos.mom_low)
+  # pred_up <- atan2(sin.mom_up,cos.mom_up)
+  
+  ########################## Estimate theta value directly ################################
   len <- dim(mu_hat)[1]; 
-  sin.mom <- cos.mom <- sin.mom_low <- cos.mom_low <- sin.mom_up <- cos.mom_up <- c();
+  pred <- pred_low <- pred_up <- c();
   for(i in 1:len){
-   sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
-   cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
-   sin.mom_low[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
-   cos.mom_low[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
-   sin.mom_up[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
-   cos.mom_up[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
+   pred[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
+   pred_low[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
+   pred_up[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
   }
-  # Estimate predict theta value
-  pred <- atan2(sin.mom,cos.mom)
-  pred_low <- atan2(sin.mom_low,cos.mom_low)
-  pred_up <- atan2(sin.mom_up,cos.mom_up)
+  
   return(data.frame(pred = c(rep(NA,P),pred),lower = c(rep(NA,P),pred_low),upper = c(rep(NA,P),pred_up)))  
 }
 # output predict value
 pred_value <- function(fit,p,dat){
   # パラメータ推定値を用いて予測する, 出力はdata.frame形式
-  pred <- ans_stan_p(fit, P=p, num = length(dat),data=dat) 
+  pred <- ans_stan_p(fit, P=p, data=dat) 
   # model のRMSE 算出するコード
   data.frame(real=dat,pred) %>% 
     mutate(dif = pred - real) %>% 
