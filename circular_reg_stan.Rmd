@@ -485,6 +485,28 @@ extract_log_lik(fit9_4,"log_likelihood") %>% loo::waic() # VAR(9) model
 extract_log_lik(fit10_4,"log_likelihood") %>% loo::waic() # VAR(10) model
 ```
 
+
+```{r}
+# algorithm に従って計算, 確認用
+# 2n 倍すると上と一緒の結果になります
+waic_ <- function(log_likelihood) {
+ training_error <- - mean(log(colMeans(exp(log_likelihood))))
+ functional_variance_div_N <- mean(colMeans(log_likelihood^2) - colMeans(log_likelihood)^2)
+ waic <- training_error + functional_variance_div_N
+ return(waic)
+}
+extract_log_lik(fit1_4,"log_likelihood") %>% waic_ # VAR(1) model
+extract_log_lik(fit2_4,"log_likelihood") %>% waic_ # VAR(2) model
+extract_log_lik(fit3_4,"log_likelihood") %>% waic_ # VAR(3) model
+extract_log_lik(fit4_4,"log_likelihood") %>% waic_ # VAR(4) model
+extract_log_lik(fit5_4,"log_likelihood") %>% waic_ # VAR(5) model
+extract_log_lik(fit6_4,"log_likelihood") %>% waic_ # VAR(6) model
+extract_log_lik(fit7_4,"log_likelihood") %>% waic_ # VAR(7) model
+extract_log_lik(fit8_4,"log_likelihood") %>% waic_ # VAR(8) model
+extract_log_lik(fit9_4,"log_likelihood") %>% waic_ # VAR(9) model
+extract_log_lik(fit10_4,"log_likelihood") %>% waic_ # VAR(10) model
+```
+
 ```{r,eval=FALSE,include=FALSE}
 # model1
 log_lik1 <- extract_log_lik(fit1_1,"log_likelihood")
@@ -511,5 +533,29 @@ loo::waic(log_lik2)
 # model5
 extract_log_lik(fit2_5,"log_likelihood") %>% loo::waic()
 extract_log_lik(fit3_5,"log_likelihood") %>% loo::waic()
+```
+
+# AIC
+
+```{r}
+# AICを計算する, 4chain * 4000 sample = 16000個, 16000 * (310 - p)の対数尤度が記録されている
+# 各sampleの対数尤度を足す
+# max? mean? を計算して, 有効パラメータ数を足す
+aic_ <- function(fit,k){
+  log_lik <- c(); a <- extract_log_lik(fit,"log_likelihood");
+  for( i in 1:dim(a)[1]) log_lik <- append(log_lik,a[i,] %>% sum()) 
+  AIC <- -2*max(log_lik) + (2 + 4*k + 2)
+  return(AIC)
+}
+aic_(fit1_4,k=1) # VAR(1) model
+aic_(fit2_4,k=2) # VAR(2) model
+aic_(fit3_4,k=3) # VAR(3) model
+aic_(fit4_4,k=4) # VAR(4) model
+aic_(fit5_4,k=5) # VAR(5) model
+aic_(fit6_4,k=6) # VAR(6) model
+aic_(fit7_4,k=7) # VAR(7) model
+aic_(fit8_4,k=8) # VAR(8) model
+aic_(fit9_4,k=9) # VAR(9) model
+aic_(fit10_4,k=10) # VAR(10) model
 ```
 
