@@ -144,7 +144,7 @@ ans_stan_p <- function(fit,P,num,data){
   #  pred_up[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
   # }
   
-  return(data.frame(pred = c(rep(NA,P),pred),lower = c(rep(NA,P),pred_low),upper = c(rep(NA,P),pred_up)))  
+  return(data.frame(predict= c(rep(NA,P),pred),lower = c(rep(NA,P),pred_low),upper = c(rep(NA,P),pred_up)))  
 }
 # output predict value
 pred_value <- function(fit,p,dat){
@@ -152,7 +152,7 @@ pred_value <- function(fit,p,dat){
   pred <- ans_stan_p(fit, P=p, data=dat) 
   # model のRMSE 算出するコード
   data.frame(real=dat,pred) %>% 
-    mutate(dif = pred - real) %>% 
+    mutate(dif = predict - real) %>% 
     mutate(dif_ = dplyr::if_else(dif < -pi, dif + 2*pi,
                                  dplyr::if_else(dif > pi, dif - 2*pi, dif))) %>% # 誤差は必ず -pi ~ pi に含まれる
     mutate(eps = dif_^2) %>% 
@@ -161,10 +161,15 @@ pred_value <- function(fit,p,dat){
   # 予測値, 真値, 信用区間を表示する
   data.frame(real=dat,pred) %>% 
     mutate(index = row_number()) %>%
-    ggplot(aes(index)) +
-      geom_line(aes(y=real)) + 
-      geom_line(aes(y=pred), color="steelblue") +
-      geom_ribbon(aes(ymin=lower,ymax=upper),colour="grey70",alpha=0.5)
+    ggplot(aes(x=index)) +
+      geom_ribbon(aes(ymin=lower,ymax=upper),fill="skyblue",alpha=0.6) +
+      geom_line(aes(y=real, colour= "real")) + 
+      geom_line(aes(y=predict, colour= "predict")) +
+      scale_colour_manual("",
+                          values = c("real"="black","predict"="blue")
+                          ) +
+      labs(y=expression(theta))
+      
 }
 ```
 
