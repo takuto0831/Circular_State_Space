@@ -47,6 +47,12 @@ library(ggmcmc)
 library(magrittr)
 ```
 
+# set ggplot theme
+
+```{r ggplot setting}
+theme_set(theme_classic(base_size = 18,base_family = "Helvetica"))
+```
+
 # Function
 
 ```{r}
@@ -112,30 +118,31 @@ ans_stan_p <- function(fit,P,num,data){
   fn.cos<- function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # cos func
   fn.theta <- function(x,mu,Sigma) x*v.dPnCircular_dens(theta=x, mu, Sigma) # theta func
   
-  # # Estimate sin and cos value
-  # len <- dim(mu_hat)[1]; 
-  # sin.mom <- cos.mom <- sin.mom_low <- cos.mom_low <- sin.mom_up <- cos.mom_up <- c();
-  # for(i in 1:len){
-  #  sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
-  #  cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
-  #  sin.mom_low[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
-  #  cos.mom_low[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
-  #  sin.mom_up[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
-  #  cos.mom_up[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
-  # }
-  # # Estimate predict theta value
-  # pred <- atan2(sin.mom,cos.mom)
-  # pred_low <- atan2(sin.mom_low,cos.mom_low)
-  # pred_up <- atan2(sin.mom_up,cos.mom_up)
+  ########################## Estimate theta value through sin and cos value ################################
+  # Estimate sin and cos value
+  len <- dim(mu_hat)[1];
+  sin.mom <- cos.mom <- sin.mom_low <- cos.mom_low <- sin.mom_up <- cos.mom_up <- c();
+  for(i in 1:len){
+   sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
+   cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
+   sin.mom_low[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
+   cos.mom_low[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
+   sin.mom_up[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
+   cos.mom_up[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
+  }
+  # Estimate predict theta value
+  pred <- atan2(sin.mom,cos.mom)
+  pred_low <- atan2(sin.mom_low,cos.mom_low)
+  pred_up <- atan2(sin.mom_up,cos.mom_up)
   
   ########################## Estimate theta value directly ################################
-  len <- dim(mu_hat)[1]; 
-  pred <- pred_low <- pred_up <- c();
-  for(i in 1:len){
-   pred[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
-   pred_low[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
-   pred_up[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
-  }
+  # len <- dim(mu_hat)[1]; 
+  # pred <- pred_low <- pred_up <- c();
+  # for(i in 1:len){
+  #  pred[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
+  #  pred_low[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
+  #  pred_up[i] <- integrate(fn.theta, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
+  # }
   
   return(data.frame(pred = c(rep(NA,P),pred),lower = c(rep(NA,P),pred_low),upper = c(rep(NA,P),pred_up)))  
 }
@@ -157,8 +164,7 @@ pred_value <- function(fit,p,dat){
     ggplot(aes(index)) +
       geom_line(aes(y=real)) + 
       geom_line(aes(y=pred), color="steelblue") +
-      geom_ribbon(aes(ymin=lower,ymax=upper),colour="grey70",alpha=0.5)+
-      theme_bw()
+      geom_ribbon(aes(ymin=lower,ymax=upper),colour="grey70",alpha=0.5)
 }
 ```
 
@@ -192,9 +198,16 @@ ts.plot(wind_data$theta_real)
 
 ```{r}
 # 散布図
-plot(wind_data$theta_real[1:309],wind_data$theta_real[2:310])
+data.frame(X= wind_data$theta_real[1:309],Y=wind_data$theta_real[2:310]) %>% 
+  ggplot(aes(x=X,y=Y)) +
+    geom_point() +
+    labs(x=expression(theta[t-1]),y=expression(theta[t]))
 # 自己相関
-acf(wind_data$theta_real^2)
+tmp <- acf(wind_data$theta_real,plot = FALSE)
+with(tmp, data.frame(lag, acf)) %>% # List のデータフレーム化
+  ggplot(mapping = aes(x = lag, y = acf)) +
+    geom_hline(aes(yintercept = 0)) +
+    geom_segment(mapping = aes(xend = lag, yend = 0))
 ```
 
 ```{r}
@@ -260,6 +273,10 @@ d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # 
 d.dat3 <- list(N=length(wind_data$theta_real),P=3,theta=wind_data$theta_real) # for VAR(3)
 d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # for VAR(4)
 d.dat5 <- list(N=length(wind_data$theta_real),P=5,theta=wind_data$theta_real) # for VAR(5)
+d.dat6 <- list(N=length(wind_data$theta_real),P=6,theta=wind_data$theta_real) # for VAR(6)
+d.dat7 <- list(N=length(wind_data$theta_real),P=7,theta=wind_data$theta_real) # for VAR(7)
+d.dat8 <- list(N=length(wind_data$theta_real),P=8,theta=wind_data$theta_real) # for VAR(8)
+d.dat9 <- list(N=length(wind_data$theta_real),P=9,theta=wind_data$theta_real) # for VAR(9)
 d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) # for VAR(10)
 ```
 
@@ -295,7 +312,7 @@ fit10_4 <- sampling(model4, data = d.dat10, iter=1000, chains=1) # Execute model
 
 ## save and load stan code
 
-```{r stan save model and fit,eval=FALSE,include=FALSE}
+```{r save and load  model fit,eval=FALSE,include=FALSE}
 saveRDS(model1, "model/circularVAR_p_.rds") # save model
 saveRDS(model2, "model/circularVAR_p_noconst.rds") # save model
 saveRDS(model3, "model/circularVAR_p_penalty.rds") # save model
@@ -304,16 +321,6 @@ save(fit1_1, file="fit/circularVAR_1_1.rda")# save fit
 save(fit2_1, file="fit/circularVAR_2_1.rda")# save fit
 save(fit1_2, file="fit/circularVAR_1_2.rda")# save fit
 save(fit2_2, file="fit/circularVAR_2_2.rda")# save fit
-## model 4
-save(fit1_4, file="fit/circularVAR_1_4.rda")# save fit
-save(fit2_4, file="fit/circularVAR_2_4.rda")# save fit
-save(fit3_4, file="fit/circularVAR_3_4.rda")# save fit
-save(fit4_4, file="fit/circularVAR_4_4.rda")# save fit
-save(fit5_4, file="fit/circularVAR_5_4.rda")# save fit
-save(fit10_4, file="fit/circularVAR_10_4.rda")# save fit
-```
-
-```{r stan load model,eval=FALSE,include=FALSE}
 model1 <- readRDS("model/circularVAR_p_.rds") # load model
 model2 <- readRDS("model/circularVAR_p_noconst.rds") # load model
 model3 <- readRDS("model/circularVAR_p_penalty.rds") # load model
@@ -324,13 +331,32 @@ load("fit/circularVAR_1_2.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_2_2.rda", verbose = TRUE) # load fit
 ```
 
+```{r stan save model,eval=FALSE,include=FALSE}
+## model 4
+save(fit1_4, file="fit/circularVAR_1_4.rda")# save fit
+save(fit2_4, file="fit/circularVAR_2_4.rda")# save fit
+save(fit3_4, file="fit/circularVAR_3_4.rda")# save fit
+save(fit4_4, file="fit/circularVAR_4_4.rda")# save fit
+save(fit5_4, file="fit/circularVAR_5_4.rda")# save fit
+save(fit6_4, file="fit/circularVAR_6_4.rda")# save fit
+save(fit7_4, file="fit/circularVAR_7_4.rda")# save fit
+save(fit8_4, file="fit/circularVAR_8_4.rda")# save fit
+save(fit9_4, file="fit/circularVAR_9_4.rda")# save fit
+save(fit10_4, file="fit/circularVAR_10_4.rda")# save fit
+```
+
 ```{r stan load fit}
+#model4
 load("fit/circularVAR_1_4.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_2_4.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_3_4.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_4_4.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_5_4.rda", verbose = TRUE) # load fit
-# load("fit/circularVAR_10_4.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_6_4.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_7_4.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_8_4.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_9_4.rda", verbose = TRUE) # load fit
+load("fit/circularVAR_10_4.rda", verbose = TRUE) # load fit
 ```
 
 ## stan parallel processing code
@@ -340,12 +366,16 @@ rstan_options(auto_write=TRUE) # auto save
 options(mc.cores=parallel::detectCores()) # multi core
 
 ### stan code ###  
-fit1_4 <- sampling(model4, data = d.dat1, iter = 5000, chains = 4, thin = 5)
-fit2_4 <- sampling(model4, data = d.dat2, iter = 5000, chains = 4, thin = 5)
-fit3_4 <- sampling(model4, data = d.dat3, iter = 5000, chains = 4, thin = 5)
-fit4_4 <- sampling(model4, data = d.dat4, iter = 5000, chains = 4, thin = 5)
-fit5_4 <- sampling(model4, data = d.dat5, iter = 5000, chains = 4, thin = 5)
-# fit10_4 <- sampling(model4, data = d.dat10, iter = 5000, chains = 4, thin = 5)
+fit1_4 <- sampling(model4, data = d.dat1, iter = 5000, warmup=1000, chains = 4)
+fit2_4 <- sampling(model4, data = d.dat2, iter = 5000, warmup=1000, chains = 4)
+fit3_4 <- sampling(model4, data = d.dat3, iter = 5000, warmup=1000, chains = 4)
+fit4_4 <- sampling(model4, data = d.dat4, iter = 5000, warmup=1000, chains = 4)
+fit5_4 <- sampling(model4, data = d.dat5, iter = 5000, warmup=1000, chains = 4)
+fit6_4 <- sampling(model4, data = d.dat6, iter = 5000, warmup=1000, chains = 4)
+fit7_4 <- sampling(model4, data = d.dat7, iter = 5000, warmup=1000, chains = 4)
+fit8_4 <- sampling(model4, data = d.dat8, iter = 5000, warmup=1000, chains = 4)
+fit9_4 <- sampling(model4, data = d.dat9, iter = 5000, warmup=1000, chains = 4)
+fit10_4 <- sampling(model4, data = d.dat10, iter = 5000, warmup=1000, chains = 4)
 ```
 
 # output fit paremter
@@ -357,7 +387,11 @@ fit2_4 # model4, VAR(2)model
 fit3_4 # model4, VAR(3)model
 fit4_4 # model4, VAR(4)model
 fit5_4 # model4, VAR(5)model
-# fit10_4 # model4, VAR(10)model
+fit6_4 # model4, VAR(6)model
+fit7_4 # model4, VAR(7)model
+fit8_4 # model4, VAR(8)model
+fit9_4 # model4, VAR(9)model
+fit10_4 # model4, VAR(10)model
 ```
 
 # output predict value
@@ -382,7 +416,11 @@ pred_value(fit = fit2_4,p = 2,dat=wind_data$theta_real)
 pred_value(fit = fit3_4,p = 3,dat=wind_data$theta_real)
 pred_value(fit = fit4_4,p = 4,dat=wind_data$theta_real)
 pred_value(fit = fit5_4,p = 5,dat=wind_data$theta_real)
-# pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
+pred_value(fit = fit6_4,p = 6,dat=wind_data$theta_real)
+pred_value(fit = fit7_4,p = 7,dat=wind_data$theta_real)
+pred_value(fit = fit8_4,p = 8,dat=wind_data$theta_real)
+pred_value(fit = fit9_4,p = 9,dat=wind_data$theta_real)
+pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
 
 # # model5
 # pred_value(fit = fit1_5,p = 1,dat=wind_data$theta_real)
@@ -417,7 +455,11 @@ extract_likelihood(fit2_4) # VAR(2) model
 extract_likelihood(fit3_4) # VAR(3) model
 extract_likelihood(fit4_4) # VAR(4) model
 extract_likelihood(fit5_4) # VAR(5) model
-# extract_likelihood(fit10_4) # VAR(10) model
+extract_likelihood(fit6_4) # VAR(6) model
+extract_likelihood(fit7_4) # VAR(7) model
+extract_likelihood(fit8_4) # VAR(8) model
+extract_likelihood(fit9_4) # VAR(9) model
+extract_likelihood(fit10_4) # VAR(10) model
 ```
 
 # Estimate and waic
@@ -431,7 +473,11 @@ extract_log_lik(fit2_4,"log_likelihood") %>% loo::waic() # VAR(2) model
 extract_log_lik(fit3_4,"log_likelihood") %>% loo::waic() # VAR(3) model
 extract_log_lik(fit4_4,"log_likelihood") %>% loo::waic() # VAR(4) model
 extract_log_lik(fit5_4,"log_likelihood") %>% loo::waic() # VAR(5) model
-# extract_log_lik(fit10_4,"log_likelihood") %>% loo::waic() # VAR(10) model
+extract_log_lik(fit6_4,"log_likelihood") %>% loo::waic() # VAR(6) model
+extract_log_lik(fit7_4,"log_likelihood") %>% loo::waic() # VAR(7) model
+extract_log_lik(fit8_4,"log_likelihood") %>% loo::waic() # VAR(8) model
+extract_log_lik(fit9_4,"log_likelihood") %>% loo::waic() # VAR(9) model
+extract_log_lik(fit10_4,"log_likelihood") %>% loo::waic() # VAR(10) model
 ```
 
 ```{r,eval=FALSE,include=FALSE}
