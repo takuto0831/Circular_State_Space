@@ -34,10 +34,16 @@ library(foreach)
 library(MASS)
 library(DT)
 library(ggthemes)
+library(ggforce)
 library(shinystan)
+library(rstan)
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
 ```
+# set ggplot theme
 
+```{r ggplot setting}
+theme_set(theme_classic(base_size = 18,base_family = "Helvetica"))
+```
 # Circular regression model
 
 以下の式で, 表されるcircular regression modelによる時系列データを生成する.
@@ -152,20 +158,15 @@ $$ \alpha_{c,0}, \alpha_{s,0}, \left(
 ```{r parameter setting}
 # model parameter
 alpha <- matrix(c(0,0), nrow = 2)
-beta <- array(c(0.5,0.1,
-                0.2,0.25),dim = c(2,2,1))
+beta <- array(c(0.5,0.1,0.2,0.25,0.1,0.01,0.25,-0.2,-0.3,0.1,0.2,-0.25), dim = c(2,2,3))
 Eps <- GeneratingEps(sigma_c=1, sigma_s=1.5, rho=0.5)
 
 # Simulation parameter
-theta_start_vec <- c(0) # 初期値
-len <- 200 # 返す乱数列の長さ(初期値も含む)
+theta_start_vec <- c(0.5,0.3,-1.5) # 初期値
+len <- 300 # 返す乱数列の長さ(初期値も含む)
 ```
 
 パラメーターを元に, シミューレーションデータを生成する.
-
-```{r}
-CircularRegSim # 関数
-```
 
 ```{r}
 Sim_data <- CircularRegSim(theta_start_vec,len,alpha,beta,Eps)
@@ -186,11 +187,6 @@ Sim_data %>%
   as.data.frame() %>%
   rename(p=V1, cos=V2, sin=V3) %>% 
   mutate(theta = atan2(sin,cos)) -> Sim_data
-```
-
-```{r}
-Sim_data %>% 
-  DT::datatable(rownames = FALSE)
 ```
 
 # Time Series Plot
@@ -216,60 +212,71 @@ Sim_data %>%
 
 # estimate for stan
 
-
 ```{r set data list, eval=FALSE}
 d.dat1 <- list(N=length(Sim_data$theta),P=1,theta=Sim_data$theta) # for VAR(1)
 d.dat2 <- list(N=length(Sim_data$theta),P=2,theta=Sim_data$theta) # for VAR(2)
 d.dat3 <- list(N=length(Sim_data$theta),P=3,theta=Sim_data$theta) # for VAR(3)
+d.dat4 <- list(N=length(Sim_data$theta),P=4,theta=Sim_data$theta) # for VAR(4)
+d.dat5 <- list(N=length(Sim_data$theta),P=5,theta=Sim_data$theta) # for VAR(5)
 ```
 
-```{r stan test, eval=FALSE,include=FALSE}
-#fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
-#fit<-stan(file='stan/test1.stan',data=d.dat,iter=4000,chains=1) # 分散共分散行列の過程
-# compile model
-model1 <- stan_model('stan/circularVAR_p.stan')
-model2 <- stan_model('stan/circularVAR_p_.stan')
-model3 <- stan_model('stan/circularVAR_p_penalty.stan')
-# fitting stan model
-fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
-fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2_2 <- sampling(model2, data = d.dat2, iter=1000, chains=1) # Execute model
-fit1_3 <- sampling(model3, data = c(d.dat1,lambda=1), iter=1000, chains=1) # Execute model
-fit2_3 <- sampling(model3, data = c(d.dat2,lambda=1), iter=1000, chains=1) # Execute model
-fit3_3 <- sampling(model3, data = c(d.dat3,lambda=1), iter=1000, chains=1) # Execute model
+```{r stan save model,eval=FALSE,include=FALSE}
+model <- readRDS("model/circularVAR_p_sigma_I.rds") # load model
+## model 4
+save(fit1, file="fit/sim1.rda")# save fit
+save(fit2, file="fit/sim2.rda")# save fit
+save(fit3, file="fit/sim3.rda")# save fit
+save(fit4, file="fit/sim4.rda")# save fit
+save(fit5, file="fit/sim5.rda")# save fit
 ```
+
+```{r stan load fit}
+#model4
+load("fit/sim1.rda", verbose = TRUE) # load fit
+load("fit/sim2.rda", verbose = TRUE) # load fit
+load("fit/sim3.rda", verbose = TRUE) # load fit
+load("fit/sim4.rda", verbose = TRUE) # load fit
+load("fit/sim5.rda", verbose = TRUE) # load fit
+```
+
+```{r,eval=FALSE,include=FALSE}
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+
+### stan code ###  
+fit1 <- sampling(model, data = d.dat1, iter = 2000, warmup=1000, chains = 4)
+fit2 <- sampling(model, data = d.dat2, iter = 2000, warmup=1000, chains = 4)
+fit3 <- sampling(model, data = d.dat3, iter = 2000, warmup=1000, chains = 4)
+fit4 <- sampling(model, data = d.dat4, iter = 2000, warmup=1000, chains = 4)
+fit5 <- sampling(model, data = d.dat5, iter = 2000, warmup=1000, chains = 4)
+```
+
 
 ```{r}
 options(max.print = 200)
-fit1_2
-fit2_2
-# fit2_1
-# fit2_2
-# fit2_3
+fit1
+fit2
+fit3
+fit4
+fit5
 ```
 
 ```{r}
-pred_value(fit = fit1_2,p = 1,dat=Sim_data$theta)
-pred_value(fit = fit2_2,p = 2,dat=Sim_data$theta)
+pred_value(fit = fit1,p = 1,dat=Sim_data$theta)
+pred_value(fit = fit2,p = 2,dat=Sim_data$theta)
+pred_value(fit = fit3,p = 3,dat=Sim_data$theta)
+pred_value(fit = fit4,p = 4,dat=Sim_data$theta)
+pred_value(fit = fit5,p = 5,dat=Sim_data$theta)
 ```
 
-```{r}
-pred_value(fit = fit1_3,p = 1,dat=Sim_data$theta)
-pred_value(fit = fit2_3,p = 2,dat=Sim_data$theta)
-pred_value(fit = fit3_3,p = 3,dat=Sim_data$theta)
-```
+
 
 ```{r}
-log_lik <- extract_log_lik(fit2_2,"log_likelihood")
-waic(log_lik)
-log_lik %>% exp() %>% mean() %>% log()
-log_lik %>% var() %>% sum() * 2
-```
-
-# shiny stan による結果の確認
-
-```{r}
-launch_shinystan(fit2_2)
+# model
+extract_log_lik(fit1,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit2,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit3,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit4,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit5,"log_likelihood") %>% loo::waic() # VAR(5) model
 ```
 
