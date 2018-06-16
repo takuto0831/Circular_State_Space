@@ -38,6 +38,7 @@ library(lubridate)
 library(circular)
 library(readr)
 library(ggthemes)
+library(ggforce)
 library(vars)
 library(MASS)
 library(rstan)
@@ -45,6 +46,7 @@ library(MCMCpack)
 library(loo)
 library(ggmcmc)
 library(magrittr)
+source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
 ```
 
 # set ggplot theme
@@ -169,7 +171,6 @@ pred_value <- function(fit,p,dat){
                           values = c("real"="black","predict"="blue")
                           ) +
       labs(y=expression(theta))
-      
 }
 ```
 
@@ -488,11 +489,11 @@ extract_log_lik(fit10_4,"log_likelihood") %>% loo::waic() # VAR(10) model
 
 ```{r}
 # algorithm に従って計算, 確認用
-# 2n 倍すると上と一緒の結果になります
+# loo::waic() を 2n で割った値に相当する
 waic_ <- function(log_likelihood) {
- training_error <- - mean(log(colMeans(exp(log_likelihood))))
- functional_variance_div_N <- mean(colMeans(log_likelihood^2) - colMeans(log_likelihood)^2)
- waic <- training_error + functional_variance_div_N
+ lpd_hat <- mean(log(colMeans(exp(log_likelihood))))
+ p_hat <- mean(colMeans(log_likelihood^2) - colMeans(log_likelihood)^2)
+ waic <- - lpd_hat + p_hat
  return(waic)
 }
 extract_log_lik(fit1_4,"log_likelihood") %>% waic_ # VAR(1) model
@@ -534,6 +535,20 @@ loo::waic(log_lik2)
 extract_log_lik(fit2_5,"log_likelihood") %>% loo::waic()
 extract_log_lik(fit3_5,"log_likelihood") %>% loo::waic()
 ```
+
+# looic
+
+```{r}
+get_loo <- function(model) {
+  log_lik <- extract_log_lik(model,"log_likelihood", merge_chains=FALSE)
+  r_eff <- relative_eff(exp(log_lik))
+  loo(log_lik, r_eff=r_eff, cores=4)
+}
+get_loo(fit1_4)
+get_loo(fit2_4)
+get_loo(fit3_4)
+```
+
 
 # AIC
 
