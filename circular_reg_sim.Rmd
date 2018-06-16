@@ -204,8 +204,7 @@ Sim_dataにおける, `theta`, `sin`, `cos`について時系列データとし�
 Sim_data %>% 
   ggplot(aes(x=p,y=theta)) +
    geom_line() + 
-   theme_economist() +
-   labs(title = "time series circular plot")
+   labs(y=expression(theta),x="index")
 ```
 
 ```{r}
@@ -213,8 +212,7 @@ Sim_data %>%
   tidyr::gather(key = "variable",value  = value, cos,sin) %>% 
   ggplot(aes(x=p,y=value,colour=variable)) +
    geom_line() + 
-   theme_economist() +
-   labs(title = "time series circular plot")
+   labs(x="index")
 ```
 
 # estimate for stan
