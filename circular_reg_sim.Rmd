@@ -37,6 +37,7 @@ library(ggthemes)
 library(ggforce)
 library(shinystan)
 library(rstan)
+library(loo)
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
 ```
 # set ggplot theme
@@ -166,6 +167,12 @@ theta_start_vec <- c(0.5,0.3,-1.5) # 初期値
 len <- 300 # 返す乱数列の長さ(初期値も含む)
 ```
 
+```{r}
+alpha
+beta
+Eps
+```
+
 パラメーターを元に, シミューレーションデータを生成する.
 
 ```{r}
@@ -253,7 +260,7 @@ fit5 <- sampling(model, data = d.dat5, iter = 2000, warmup=1000, chains = 4)
 
 
 ```{r}
-options(max.print = 200)
+options(max.print = 400)
 fit1
 fit2
 fit3
