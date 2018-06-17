@@ -96,6 +96,8 @@ arrows.circular(circular(pi),col=4,cex=50,lty=5)
 ################   使用データのヒストグラム #######################
 library(circular)
 library(tidyverse)
+theme_set(theme_classic(base_size = 18,base_family = "Helvetica"))
+
 data(wind) 
 wind_data <- wind %>%  
   data.frame(t = seq(1,310,1), tmp=.) %>% # put label
@@ -106,8 +108,7 @@ wind_data <- wind %>%
 wind_data %>% 
   ggplot(aes(theta_real)) +
   geom_histogram(binwidth = 0.2, colour = "black", fill = "grey") + 
-  labs(x="Wind directions in dadians") +
-  theme_bw()
+  labs(x="Wind directions in dadians")
 
 ################ p(theta;Sigma) = p(theta;c*Sigma)の確認 #################
 ###### 一致しない
