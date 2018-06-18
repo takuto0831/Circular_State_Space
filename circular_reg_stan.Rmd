@@ -320,7 +320,7 @@ pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
 # output dens arbitrary index
 
 ```{r}
-tmp <- PN_dist_pred(fit = fit1_4,index_vec = c(50,100,300),sample_num = 16000,data = wind_data$theta_real)
+tmp <- PN_dist_pred(fit = fit1_4,index_vec = c(50,100,300),sample_num = 16000,data = wind_data$theta_real,P=1)
 tmp %>% 
   gather(-id,key="index",value = "value") %>% 
   ggplot(aes(x=value,fill=index,colour = index)) +

@@ -174,7 +174,7 @@ pred_value <- function(fit,p,dat){
 }
 
 # output PN distribution in arbitrary index
-PN_dist_pred <- function(fit,index_vec,sample_num,data){
+PN_dist_pred <- function(fit,index_vec,sample_num,data,P){
   fit_ext <- rstan::extract(fit,permuted=T);
   # Const parameter
   alpha_0 <- fit_ext$alpha_0 %>% t()
