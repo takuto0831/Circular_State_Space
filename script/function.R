@@ -173,6 +173,34 @@ pred_value <- function(fit,p,dat){
     labs(y=expression(theta))
 }
 
+# output PN distribution in arbitrary index
+PN_dist_pred <- function(fit,index_vec,sample_num,data){
+  fit_ext <- rstan::extract(fit,permuted=T);
+  for (id in 1:sample_num) {
+    # Const parameter
+    alpha_0 = matrix(c(fit_ext$alpha_0[id %>% as.numeric(),1],fit_ext$alpha_0[id%>% as.numeric(),2]),ncol=1);
+    # Beta parameter
+    alpha_1 <- c();
+    for(i in 1:P){
+      tmp <- matrix(c(fit_ext$alpha_1[id %>% as.numeric(),1,(2*i-1)],fit_ext$alpha_1[id %>% as.numeric(),1,2*i],
+                      fit_ext$alpha_1[id %>% as.numeric(),2,(2*i-1)],fit_ext$alpha_1[id %>% as.numeric(),2,2*i]),byrow=T,2,2)
+      alpha_1 <- cbind(alpha_1, tmp)
+    }
+    # Variance-Covariance matrix
+    Sigma = matrix(c(fit_ext$sigma[id %>% as.numeric(),1,1], fit_ext$sigma[id %>% as.numeric(),1,2],
+                     fit_ext$sigma[id %>% as.numeric(),2,1], fit_ext$sigma[id %>% as.numeric(),2,2]), byrow=T,2,2)
+  
+    # Estimate condition mean 
+    num = length(data) 
+    mu_hat <- matrix(0, ncol=2, nrow=(num-P) )
+    for(i in (1+P):num){
+      pre <- c(); # p期前のcos(theta), sin(theta)を格納する
+      for (k in 1:P) pre <- rbind(pre,matrix(c(cos(data[i-k]),sin(data[i-k])),ncol=1));
+      mu_hat[i-P,] <- alpha_0 + ( alpha_1 %*% pre )
+    }
+  }
+}
+
 DIC_func <- function(fit,data,dev,P)
 {
   ## mean.Deviance
