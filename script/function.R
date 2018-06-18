@@ -123,8 +123,8 @@ ans_stan_p <- function(fit,P,num,data){
   len <- dim(mu_hat)[1];
   sin.mom <- cos.mom <- sin.mom_low <- cos.mom_low <- sin.mom_up <- cos.mom_up <- c();
   for(i in 1:len){
-    sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
     cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
+    sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat[i,], Sigma=Sigma)$value
     # sin.mom_low[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
     # cos.mom_low[i] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat_low[i,], Sigma=Sigma_low)$value
     # sin.mom_up[i] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat_up[i,], Sigma=Sigma_up)$value
@@ -176,29 +176,32 @@ pred_value <- function(fit,p,dat){
 # output PN distribution in arbitrary index
 PN_dist_pred <- function(fit,index_vec,sample_num,data){
   fit_ext <- rstan::extract(fit,permuted=T);
-  for (id in 1:sample_num) {
-    # Const parameter
-    alpha_0 = matrix(c(fit_ext$alpha_0[id %>% as.numeric(),1],fit_ext$alpha_0[id%>% as.numeric(),2]),ncol=1);
-    # Beta parameter
-    alpha_1 <- c();
-    for(i in 1:P){
-      tmp <- matrix(c(fit_ext$alpha_1[id %>% as.numeric(),1,(2*i-1)],fit_ext$alpha_1[id %>% as.numeric(),1,2*i],
-                      fit_ext$alpha_1[id %>% as.numeric(),2,(2*i-1)],fit_ext$alpha_1[id %>% as.numeric(),2,2*i]),byrow=T,2,2)
-      alpha_1 <- cbind(alpha_1, tmp)
+  # Const parameter
+  alpha_0 <- fit_ext$alpha_0 %>% t()
+  # Beta parameter
+  alpha_1 <- fit_ext$alpha_1 # 160000, 2, 2*p
+  # Variance-Covariance matrix
+  Sigma <- fit_ext$sigma # 16000,2,2
+  # 空配列の定義
+  ans_box <- data.frame(id = seq(1,sample_num))
+  # 積分関数定義
+  fn.sin<- function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin func
+  fn.cos<- function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # cos func
+  # Estimate condition mean
+  for (i in 1:length(index_vec)) {
+    pre <- c(); # p期前のcos(theta), sin(theta)を格納する
+    cos.mom <- sin.mom <- c();
+    for (k in 1:P) pre <- rbind(pre,matrix(c(cos(data[index_vec[i] - k]),sin(data[index_vec[i] - k])),ncol=1));
+    for (k in 1:sample_num) {
+      mu_hat <- alpha_0[,k] + ( alpha_1[k,,] %*% pre )
+      cos.mom[k] <- integrate(fn.cos, lower=-pi, upper=pi, mu=mu_hat, Sigma=Sigma[k,,])$value
+      sin.mom[k] <- integrate(fn.sin, lower=-pi, upper=pi, mu=mu_hat, Sigma=Sigma[k,,])$value
     }
-    # Variance-Covariance matrix
-    Sigma = matrix(c(fit_ext$sigma[id %>% as.numeric(),1,1], fit_ext$sigma[id %>% as.numeric(),1,2],
-                     fit_ext$sigma[id %>% as.numeric(),2,1], fit_ext$sigma[id %>% as.numeric(),2,2]), byrow=T,2,2)
-  
-    # Estimate condition mean 
-    num = length(data) 
-    mu_hat <- matrix(0, ncol=2, nrow=(num-P) )
-    for(i in (1+P):num){
-      pre <- c(); # p期前のcos(theta), sin(theta)を格納する
-      for (k in 1:P) pre <- rbind(pre,matrix(c(cos(data[i-k]),sin(data[i-k])),ncol=1));
-      mu_hat[i-P,] <- alpha_0 + ( alpha_1 %*% pre )
-    }
+    pred <- atan2(sin.mom,cos.mom)
+    ans_box <- cbind(ans_box,pred)
+    colnames(ans_box)[i+1] <- paste("index",index_vec[i],sep = "")
   }
+  return(ans_box)
 }
 
 DIC_func <- function(fit,data,dev,P)
@@ -259,7 +262,7 @@ stan_ac_label <- function (object, pars, label_set, include = TRUE, unconstrain 
   y_scale <- scale_y_continuous(labels = seq(0, 1, 0.25))
   base <- ggplot(ac_dat, aes_string(x = "lag", y = "ac"))
   graph <- base + 
-    geom_bar(stat = "identity", fill = "blue") +
+    geom_bar(stat = "kentity", fill = "blue") +
     y_scale + ac_labs + thm +
     facet_wrap(~parameters, nrow = nrow, ncol = ncol, scales = "free_x",labeller = label_set) +
     theme(strip.text.x = element_text(size = 12))

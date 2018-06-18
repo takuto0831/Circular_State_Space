@@ -317,6 +317,16 @@ pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
 # pred_value(fit = fit3_5,p = 3,dat=wind_data$theta_real)
 ```
 
+# output dens arbitrary index
+
+```{r}
+tmp <- PN_dist_pred(fit = fit1_4,index_vec = c(50,100,300),sample_num = 16000,data = wind_data$theta_real)
+tmp %>% 
+  gather(-id,key="index",value = "value") %>% 
+  ggplot(aes(x=value,fill=index,colour = index)) +
+    geom_density(alpha = 0.1)
+```
+
 # Diagnosis
 
 ```{r,eval=FALSE}
