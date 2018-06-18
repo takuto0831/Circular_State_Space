@@ -259,6 +259,7 @@ fit4 <- sampling(model, data = d.dat4, iter = 5000, warmup=1000, chains = 4)
 fit5 <- sampling(model, data = d.dat5, iter = 5000, warmup=1000, chains = 4)
 ```
 
+# fit 
 
 ```{r}
 options(max.print = 400)
@@ -269,6 +270,8 @@ fit4
 fit5
 ```
 
+#RMSE and Plot
+
 ```{r}
 pred_value(fit = fit1,p = 1,dat=Sim_data$theta)
 pred_value(fit = fit2,p = 2,dat=Sim_data$theta)
@@ -277,7 +280,7 @@ pred_value(fit = fit4,p = 4,dat=Sim_data$theta)
 pred_value(fit = fit5,p = 5,dat=Sim_data$theta)
 ```
 
-
+# WAIC
 
 ```{r}
 # model
@@ -286,5 +289,16 @@ extract_log_lik(fit2,"log_likelihood") %>% loo::waic() # VAR(2) model
 extract_log_lik(fit3,"log_likelihood") %>% loo::waic() # VAR(3) model
 extract_log_lik(fit4,"log_likelihood") %>% loo::waic() # VAR(4) model
 extract_log_lik(fit5,"log_likelihood") %>% loo::waic() # VAR(5) model
+```
+
+# DIC
+
+```{r}
+(DIC_func(fit1,data = Sim_data$theta, dev = PnCircular_log, P =1) -> a)
+(DIC_func(fit2,data = Sim_data$theta, dev = PnCircular_log, P =2) -> b)
+(DIC_func(fit3,data = Sim_data$theta, dev = PnCircular_log, P =3) -> c)
+(DIC_func(fit4,data = Sim_data$theta, dev = PnCircular_log, P =4) -> d)
+(DIC_func(fit5,data = Sim_data$theta, dev = PnCircular_log, P =5) -> e)
+data.frame(a[5],b[5],c[5],d[5],e[5]) %>% kable(format = "latex")
 ```
 

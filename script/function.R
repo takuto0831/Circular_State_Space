@@ -173,6 +173,45 @@ pred_value <- function(fit,p,dat){
     labs(y=expression(theta))
 }
 
+DIC_func <- function(fit,data,dev,P)
+{
+  ## mean.Deviance
+  mean.Deviance <- extract_log_lik(fit,"log_likelihood") %>% # nrow = 16000, ncol = n - P,の対数尤度 
+    apply(1, sum) %>% # 各サンプルでの尤度の総和
+    mean() # 各サンプルでの尤度の総和の平均
+  mean.Deviance <- -2 * mean.Deviance # -2倍
+  
+  ## Deviance.mean
+  fit_ext <- rstan::extract(fit,permuted=T); 
+  # Const parameter
+  alpha_0 = matrix(c(fit_ext$alpha_0[,1] %>% mean(),fit_ext$alpha_0[,2] %>% mean()),ncol=1);
+  # Beta parameter
+  alpha_1 <- c();
+  for(i in 1:P){
+    tmp <- matrix(c(fit_ext$alpha_1[,1,(2*i-1)] %>% mean(),fit_ext$alpha_1[,1,2*i] %>% mean(),
+                    fit_ext$alpha_1[,2,(2*i-1)] %>% mean(),fit_ext$alpha_1[,2,2*i] %>% mean()),byrow=T,2,2)
+    alpha_1 <- cbind(alpha_1, tmp)
+  }
+  # Variance-Covariance matrix
+  Sigma = matrix(c(fit_ext$sigma[,1,1] %>% mean(),fit_ext$sigma[,1,2] %>% mean(),
+                   fit_ext$sigma[,2,1] %>% mean(),fit_ext$sigma[,2,2] %>% mean()),byrow=T,2,2)
+  
+  # Estimate condition mean 
+  num = length(data) 
+  mu_hat <- matrix(0, ncol=2, nrow=(num-P) )
+  for(i in (1+P):num){
+    pre <- c(); # p期前のcos(theta), sin(theta)を格納する
+    for (k in 1:P) pre <- rbind(pre,matrix(c(cos(data[i-k]),sin(data[i-k])),ncol=1));
+    mu_hat[i-P,] <- alpha_0 + ( alpha_1 %*% pre )
+  }
+  len <- dim(mu_hat)[1]; Deviance.mean <- 0; # パラメータの平均値を用いて, 算出した尤度の総和
+  for(i in 1:len){
+    Deviance.mean <- Deviance.mean + (-2 * as.numeric(dev(data[i+P], mu_hat[i,], Sigma)))
+  }
+  pD <- mean.Deviance - Deviance.mean
+  return(c(P = P,mean.Dev=mean.Deviance, Dev.mean=Deviance.mean, pD=mean.Deviance-Deviance.mean, DIC=pD+mean.Deviance) )
+}
+
 # 可視化用
 stan_ac_label <- function (object, pars, label_set, include = TRUE, unconstrain = FALSE, 
                            inc_warmup = FALSE, nrow = NULL, ncol = NULL, ..., separate_chains = FALSE, 
