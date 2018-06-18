@@ -51,7 +51,12 @@ GeneratingEps <- function(sigma_c, sigma_s, rho){
   matrix(c(sigma_c^2,rho*sigma_c*sigma_s,rho*sigma_c*sigma_s,sigma_s^2),nrow=2) %>% 
     return()
 }
-
+# |Sigma| = 1 の制約を加える
+GeneratingEps2 <- function(sigma_c, rho){
+  sigma_s = sqrt( 1 / (sigma_c^2*( 1 - rho^2)));
+  matrix(c(sigma_c^2,rho*sigma_c*sigma_s,rho*sigma_c*sigma_s,sigma_s^2),nrow=2) %>% 
+    return()
+}
 # Projected Normal Circular Plobability Density 
 dPnCircular_dens <- function(theta,mu,Sigma){
   u = matrix(c(cos(theta),sin(theta)),ncol=1)

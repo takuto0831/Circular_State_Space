@@ -157,11 +157,14 @@ $$ \alpha_{c,0}, \alpha_{s,0}, \left(
 であり, 以下のように定義する. ここで$p=1$とする.
 
 ```{r parameter setting}
-# model parameter
+# model parameter 
 alpha <- matrix(c(0,0), nrow = 2)
 beta <- array(c(0.5,0.1,0.2,0.25,0.1,0.01,0.25,-0.2,-0.3,0.1,0.2,-0.25), dim = c(2,2,3))
 Eps <- GeneratingEps(sigma_c=1, sigma_s=1.5, rho=0.5)
-
+# model parameter |Sigma| = 1
+alpha <- matrix(c(0.2,0.9), nrow = 2)
+beta <- array(c(0.5,0.1,0.2,0.25,0.1,0.01,0.25,-0.2,-0.3,0.1,0.2,-0.25), dim = c(2,2,3))
+Eps <- GeneratingEps2(sigma_c=1, rho=0.5)
 # Simulation parameter
 theta_start_vec <- c(0.5,0.3,-1.5) # 初期値
 len <- 300 # 返す乱数列の長さ(初期値も含む)
