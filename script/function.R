@@ -167,3 +167,29 @@ pred_value <- function(fit,p,dat){
     ) +
     labs(y=expression(theta))
 }
+
+# 可視化用
+stan_ac_label <- function (object, pars, label_set, include = TRUE, unconstrain = FALSE, 
+                           inc_warmup = FALSE, nrow = NULL, ncol = NULL, ..., separate_chains = FALSE, 
+                           lags = 25, partial = FALSE) 
+{
+  plot_data <- .make_plot_data(object, pars, include, inc_warmup, 
+                               unconstrain)
+  # dots <- .add_aesthetics(list(...), c("size", "color", "fill"))
+  thm <- .rstanvis_defaults$theme
+  dat_args <- list(dat = plot_data$samp, lags = lags, partial = partial)
+  dat_fn <- ifelse(plot_data$nparams == 1, ".ac_plot_data", ".ac_plot_data_multi")
+  ac_dat <- do.call(dat_fn, dat_args)
+  # main 
+  # dots$position <- "dodge"; dots$stat <- "summary"; dots$fun.y <- "mean"
+  y_lab <- paste("Avg.", if (partial) "partial", "autocorrelation")
+  ac_labs <- labs(x = "Lag", y = y_lab)
+  y_scale <- scale_y_continuous(labels = seq(0, 1, 0.25))
+  base <- ggplot(ac_dat, aes_string(x = "lag", y = "ac"))
+  graph <- base + 
+    geom_bar(stat = "identity", fill = "blue") +
+    y_scale + ac_labs + thm +
+    facet_wrap(~parameters, nrow = nrow, ncol = ncol, scales = "free_x",labeller = label_set) +
+    theme(strip.text.x = element_text(size = 12))
+  return(graph)
+}

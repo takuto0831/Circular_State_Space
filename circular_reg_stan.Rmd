@@ -47,6 +47,8 @@ library(loo)
 library(ggmcmc)
 library(magrittr)
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
+source('~/Desktop/circular_reg/script/stan_plot_label_helper.R')
+source('~/Desktop/circular_reg/script/misc.R')
 ```
 
 # set ggplot theme
@@ -323,13 +325,24 @@ get_posterior_mean(fit1_4) # chainごとのパラメータ見れる
 get_inits(fit1_4) # 要確認
 stan_trace(fit1_4,pars = c("alpha_0"))
 stan_dens(fit1_4,pars = c("alpha_0"),separate_chains = T)
-stan_plot(fit1_4,point_est ="median",show_density=T,
-          # pars = c("alpha_0","alpha_1","sigma_1"),
-          pars =  c("alpha[c,o]","alpha[s,0]","beta[c,1,1]","beta[c,1,2]","beta[s,1,1]","beta[s,1,2]","sigma"),
+
+########### slide 用 ###########
+stan_plot(fit1_4,fill_color ="blue",point_est ="median",show_density=T, pars = c("alpha_0","alpha_1","sigma[1,1]","sigma[1,2]","sigma[2,2]"), 
           ci_level = 0.95, outer_level=1.00, show_outer_line =T) + 
-  scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]),expression(beta[paste("c,",1,",",2)]),expression(beta[paste("s,",1,",",1)]),
-                                expression(beta[paste("s,",1,",",2)]),expression(sigma[paste(1,",",1)]),expression(sigma[paste(1,",",2)]),expression(sigma[paste(2,",",1)]),expression(sigma[paste(2,",",2)]))), breaks = 1:10)
-stan_ac(fit1_4,pars =  c("alpha[c,o]","alpha[s,0]","beta[c,1,1]","beta[c,1,2]","beta[s,1,1]","beta[s,1,2]","sigma"))
+          scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]),
+                                            expression(beta[paste("c,",1,",",2)]),expression(beta[paste("s,",1,",",1)]),expression(beta[paste("s,",1,",",2)]),
+                                            expression(Sigma[paste(1,",",1)]),expression(Sigma[paste(1,",",2)]),
+                                            expression(Sigma[paste(2,",",2)]))), breaks = 1:9)
+
+### 名前変更無理なので, 自作する
+pars = c("alpha_0","alpha_1","sigma[1,1]","sigma[1,2]","sigma[2,2]")
+label_set = list("alpha_0[1]" = expression(alpha[paste("c,",0)]), "alpha_0[2]" = expression(alpha[paste("s,",0)]),
+                 "alpha_1[1,1]" = expression(beta[paste("c,",1,",",1)]), "alpha_1[1,2]" = expression(beta[paste("c,",1,",",2)]),
+                 "alpha_1[2,1]" = expression(beta[paste("s,",1,",",1)]), "alpha_1[2,2]" = expression(beta[paste("s,",1,",",2)]),
+                 "sigma[1,1]" = expression(Sigma[paste(1,",",1)]),"sigma[1,2]" = expression(Sigma[paste(1,",",2)]),"sigma[2,2]" = expression(Sigma[paste(2,",",2)]))
+label_func <- function(variable, value) return(label_set[value])
+
+stan_ac_label(fit1_4,pars = pars,label_set = label_func)
 ```
 
 # log_likelihood
