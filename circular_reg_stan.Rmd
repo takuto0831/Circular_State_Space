@@ -324,7 +324,8 @@ tmp <- PN_dist_pred(fit = fit1_4,index_vec = c(50,100,300),sample_num = 16000,da
 tmp %>% 
   gather(-id,key="index",value = "value") %>% 
   ggplot(aes(x=value,fill=index,colour = index)) +
-    geom_density(alpha = 0.1)
+    geom_density(alpha = 0.1) +
+    labs(x= expression(theta))
 ```
 
 # Diagnosis
