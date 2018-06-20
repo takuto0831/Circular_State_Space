@@ -207,6 +207,7 @@ PN_dist_pred <- function(fit,index_vec,sample_num,data,P){
 DIC_func <- function(fit,data,dev,P)
 {
   ## mean.Deviance
+  # data = theta, dev = log PN dist
   mean.Deviance <- extract_log_lik(fit,"log_likelihood") %>% # nrow = 16000, ncol = n - P,の対数尤度 
     apply(1, sum) %>% # 各サンプルでの尤度の総和
     mean() # 各サンプルでの尤度の総和の平均

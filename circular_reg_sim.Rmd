@@ -199,6 +199,12 @@ Sim_data %>%
   mutate(theta = atan2(sin,cos)) -> Sim_data
 ```
 
+```{r}
+# 単位根過程
+library(tseries)
+adf.test(Sim_data$theta,k=0)
+```
+
 # Time Series Plot
 
 Sim_dataにおける, `theta`, `sin`, `cos`について時系列データとして見てみる.
@@ -226,6 +232,7 @@ d.dat2 <- list(N=length(Sim_data$theta),P=2,theta=Sim_data$theta) # for VAR(2)
 d.dat3 <- list(N=length(Sim_data$theta),P=3,theta=Sim_data$theta) # for VAR(3)
 d.dat4 <- list(N=length(Sim_data$theta),P=4,theta=Sim_data$theta) # for VAR(4)
 d.dat5 <- list(N=length(Sim_data$theta),P=5,theta=Sim_data$theta) # for VAR(5)
+d.dat6 <- list(N=length(Sim_data$theta),P=6,theta=Sim_data$theta) # for VAR(5)
 ```
 
 ```{r stan save model,eval=FALSE,include=FALSE}
@@ -257,6 +264,7 @@ fit2 <- sampling(model, data = d.dat2, iter = 5000, warmup=1000, chains = 4)
 fit3 <- sampling(model, data = d.dat3, iter = 5000, warmup=1000, chains = 4)
 fit4 <- sampling(model, data = d.dat4, iter = 5000, warmup=1000, chains = 4)
 fit5 <- sampling(model, data = d.dat5, iter = 5000, warmup=1000, chains = 4)
+fit6 <- sampling(model, data = d.dat6, iter = 5000, warmup=1000, chains = 4)
 ```
 
 # fit 
@@ -268,6 +276,7 @@ fit2
 fit3
 fit4
 fit5
+fit6
 ```
 
 #RMSE and Plot
