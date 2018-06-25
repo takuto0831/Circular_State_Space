@@ -19,7 +19,7 @@ data{
   // data paramter
   int N; // sample size
   int P; // VAR(P) 
-  real<lower=-pi(),upper=pi()> theta[N]; // data
+  vector<lower=-pi(),upper=pi()>[N] theta; // data
 }
 
 parameters{
@@ -58,10 +58,6 @@ model{
 generated quantities{
   vector[N-P] log_likelihood;
   for(n in 1+P:N){
-    vector[P] pre_theta; // P期前までのtheta ベクトルを用意する.
-    for(k in 1:P){
-      pre_theta[k] = theta[n-k];
-    }
-    log_likelihood[n-P] = circular_reg_lpdf(theta[n]| P, pre_theta, alpha_0, alpha_1, sigma);
+    log_likelihood[n-P] = circular_reg_lpdf(theta[n]| P, theta[n-1:n-P], alpha_0, alpha_1, sigma);
   } 
 }
