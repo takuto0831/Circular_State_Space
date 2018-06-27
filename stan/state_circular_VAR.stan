@@ -1,12 +1,12 @@
 functions{
-  real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix Sigma){
+  real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
     vector[2*P] tmp; vector[2] mu; real p;
     for(k in 1:P){
       tmp[2*k-1] = cos(pre_theta[k]); 
       tmp[2*k] = sin(pre_theta[k]);
     }
     mu = alpha_0 + ( alpha_1 * tmp); 
-    p = multi_normal_lpdf(u|mu,Sigma);
+    p = multi_normal_lpdf(u|mu,sigma);
     return p;
   }
 }
@@ -29,7 +29,7 @@ transformed data{
 parameters{
   vector[2] alpha_0;
   matrix[2,2*P] alpha_1;
-  cov_matrix[2] Sigma;
+  cov_matrix[2] sigma;
 }
 
 model{
@@ -39,8 +39,9 @@ model{
     alpha_1[1,i] ~ normal(0,100); // N(0,100)
     alpha_1[2,i] ~ normal(0,100); // N(0,100)
   }
-  Sigma ~ inv_wishart(4,diag_matrix(rep_vector(1,2)));
+  sigma ~ inv_wishart(4,diag_matrix(rep_vector(1,2)));
   for(n in 2:N){
-    target += circular_state_lpdf(u[n]|P,theta[(n-1):(n-P)], alpha_0,alpha_1,Sigma);
+    target += circular_state_lpdf(u[n]|P,theta[(n-1):(n-P)], alpha_0,alpha_1,sigma);
   }
 }
+

@@ -46,9 +46,12 @@ library(MCMCpack)
 library(loo)
 library(ggmcmc)
 library(magrittr)
+```
+
+```{r}
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
-source('~/Desktop/circular_reg/script/stan_plot_label_helper.R')
-source('~/Desktop/circular_reg/script/misc.R')
+source('~/Desktop/circular_reg/script/stan_plot_label_helper.R') # stan_ac_labelに必要
+source('~/Desktop/circular_reg/script/misc.R') # stan_ac_labelに必要
 ```
 
 # set ggplot theme
@@ -180,8 +183,10 @@ model1 <- stan_model('stan/circularVAR_p_.stan') # 変化なし
 model2 <- stan_model('stan/circularVAR_p_noconst.stan') # no const 
 model3 <- stan_model('stan/circularVAR_p_penalty.stan') # 制約なし
 model4 <- stan_model('stan/circularVAR_p_sigma_I.stan') # det(sigma) = 1
+state_model <- stan_model('stan/state_circular_VAR.stan') # 正規分布を仮定したVARモデル
 
 # fitting stan model
+fit <- sampling(state_model,data = d.dat1, iter=1000, chains=1)
 fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
 fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
@@ -287,17 +292,7 @@ fit10_4 # model4, VAR(10)model
 
 ```{r}
 # # model1
-# pred_value(fit = fit1_1,p = 1,dat=wind_data$theta_real)
-# pred_value(fit = fit2_1,p = 2,dat=wind_data$theta_real)
-# 
-# #model2
-# pred_value(fit = fit1_2,p = 1,dat=wind_data$theta_real)
-# pred_value(fit = fit2_2,p = 2,dat=wind_data$theta_real)
-# pred_value(fit = fit3_2,p = 3,dat=wind_data$theta_real)
-# 
-# #model3
-# pred_value(fit = fit1_3,p = 1,dat=wind_data$theta_real) # function 内部 変更の必要あり
-# pred_value(fit = fit2_3,p = 2,dat=wind_data$theta_real) # function 内部 変更の必要あり
+pred_value(fit = fit,p = 1,dat=wind_data$theta_real)
 
 #model4
 pred_value(fit = fit1_4,p = 1,dat=wind_data$theta_real)
@@ -331,7 +326,7 @@ tmp %>%
 # Diagnosis
 
 ```{r,eval=FALSE}
-shinystan::launch_shinystan(fit1_4) # 基本的な分析これで全て見れる
+shinystan::launch_shinystan(fit) # 基本的な分析これで全て見れる
 get_posterior_mean(fit1_4) # chainごとのパラメータ見れる
 get_inits(fit1_4) # 要確認
 stan_trace(fit1_4,pars = c("alpha_0"))
@@ -353,7 +348,7 @@ label_set = list("alpha_0[1]" = expression(alpha[paste("c,",0)]), "alpha_0[2]" =
                  "sigma[1,1]" = expression(Sigma[paste(1,",",1)]),"sigma[1,2]" = expression(Sigma[paste(1,",",2)]),"sigma[2,2]" = expression(Sigma[paste(2,",",2)]))
 label_func <- function(variable, value) return(label_set[value])
 
-stan_ac_label(fit1_4,pars = pars,label_set = label_func)
+stan_ac_label(object=fit1_4,pars = pars,label_set = label_func)
 ```
 
 # log_likelihood
@@ -403,6 +398,7 @@ data.frame(a[5],b[5],c[5],d[5],e[5],f[5],g[5],h[5],i[5],j[5]) %>% kable(format =
 各モデルに対する, WAICを計算する. 
 
 ```{r}
+extract_log_lik(fit,"log_likelihood") %>%  loo::waic()
 # model4
 extract_log_lik(fit1_4,"log_likelihood") %>% loo::waic() # VAR(1) model
 extract_log_lik(fit2_4,"log_likelihood") %>% loo::waic() # VAR(2) model
