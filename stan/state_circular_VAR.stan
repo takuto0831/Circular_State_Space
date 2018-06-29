@@ -40,7 +40,7 @@ model{
     alpha_1[2,i] ~ normal(0,100); // N(0,100)
   }
   sigma ~ inv_wishart(4,diag_matrix(rep_vector(1,2)));
-  for(n in 2:N){
+  for(n in (1+P):N){
     target += circular_state_lpdf(u[n]|P,theta[(n-1):(n-P)], alpha_0,alpha_1,sigma);
   }
 }
