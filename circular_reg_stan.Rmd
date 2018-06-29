@@ -45,7 +45,6 @@ library(rstan)
 library(MCMCpack)
 library(loo)
 library(ggmcmc)
-library(magrittr)
 ```
 
 ```{r}
@@ -189,7 +188,7 @@ model4 <- stan_model('stan/circularVAR_p_sigma_I.stan') # det(sigma) = 1
 
 ## state and observation
 state_model <- stan_model('stan/state_circular_VAR.stan') # 正規分布を仮定したVARモデル
-obs_model <- stan_model('stan/observation_circular_VAR.stan_circular_VAR.stan') # 正規分布を仮定したVARモデル
+obs_model <- stan_model('stan/observation_circular_VAR.stan') # 正規分布を仮定したVARモデル
 state_obs_model <- stan_model('stan/state_obs_circular_VAR.stan') # 正規分布を仮定したVARモデル
 
 # fitting stan model
@@ -217,18 +216,28 @@ fit10_4 <- sampling(model4, data = d.dat10, iter=1000, chains=1) # Execute model
 ## save and load stan code
 
 ```{r save and load  model fit,eval=FALSE,include=FALSE}
+###### save model ######
 saveRDS(model1, "model/circularVAR_p_.rds") # save model
 saveRDS(model2, "model/circularVAR_p_noconst.rds") # save model
 saveRDS(model3, "model/circularVAR_p_penalty.rds") # save model
 saveRDS(model4, "model/circularVAR_p_sigma_I.rds") # save model
+saveRDS(state_model, "model/state_circular_VAR.rds") 
+saveRDS(obs_model, "model/obs_circular_VAR.rds") 
+saveRDS(state_obs_model, "model/state_obs_circular_VAR.rds") 
+
 save(fit1_1, file="fit/circularVAR_1_1.rda")# save fit
 save(fit2_1, file="fit/circularVAR_2_1.rda")# save fit
 save(fit1_2, file="fit/circularVAR_1_2.rda")# save fit
 save(fit2_2, file="fit/circularVAR_2_2.rda")# save fit
+
+####### load model #######
 model1 <- readRDS("model/circularVAR_p_.rds") # load model
 model2 <- readRDS("model/circularVAR_p_noconst.rds") # load model
 model3 <- readRDS("model/circularVAR_p_penalty.rds") # load model
 model4 <- readRDS("model/circularVAR_p_sigma_I.rds") # load model
+state_model <- readRDS("model/state_circular_VAR.rds")
+obs_model <- readRDS("model/obs_circular_VAR.rds")
+state_obs_model <- readRDS("model/state_obs_circular_VAR.rds")
 load("fit/circularVAR_1_1.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_2_1.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_1_2.rda", verbose = TRUE) # load fit
@@ -298,12 +307,17 @@ fit9_4 # model4, VAR(9)model
 fit10_4 # model4, VAR(10)model
 ```
 
+```{r}
+options(max.print = 400)
+fit_obs
+fit_state
+fit_state_obs
+```
+
+
 # output predict value
 
 ```{r}
-# state and observation
-pred_value(fit = fit_state_obs,p = 1,dat=wind_data$theta_real)
-
 #model4
 pred_value(fit = fit1_4,p = 1,dat=wind_data$theta_real)
 pred_value(fit = fit2_4,p = 2,dat=wind_data$theta_real)
@@ -320,6 +334,13 @@ pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
 # pred_value(fit = fit1_5,p = 1,dat=wind_data$theta_real)
 # pred_value(fit = fit2_5,p = 2,dat=wind_data$theta_real)
 # pred_value(fit = fit3_5,p = 3,dat=wind_data$theta_real)
+```
+
+```{r}
+# state and observation
+pred_value(fit = fit_state,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit_obs,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs,p = 1,dat=wind_data$theta_real)
 ```
 
 # output dens arbitrary index
