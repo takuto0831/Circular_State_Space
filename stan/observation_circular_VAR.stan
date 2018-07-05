@@ -38,13 +38,21 @@ model{
   sigma ~ inv_wishart(4,diag_matrix(rep_vector(1,2)));
   // 尤度最大化
   for(n in (1+P):N){
-    target += circular_obs_lpdf(theta[n]|P,theta[(n-1):(n-P)],alpha_0,alpha_1,sigma);
+    vector[P] pre_theta;
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    target += circular_obs_lpdf(theta[n]|P,pre_theta,alpha_0,alpha_1,sigma);
   }
 }
 
 generated quantities{
   vector[N-P] log_likelihood;
   for(n in (1+P):N){
-    log_likelihood[n-P] = circular_obs_lpdf(theta[n]|P, theta[n-1:n-P], alpha_0, alpha_1, sigma);
+    vector[P] pre_theta;
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    log_likelihood[n-P] = circular_obs_lpdf(theta[n]|P, pre_theta, alpha_0, alpha_1, sigma);
   } 
 }

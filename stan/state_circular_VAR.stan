@@ -19,7 +19,7 @@ data{
 }
 
 transformed data{
-  vector<lower=-1, upper=1>[2] u[N];
+  vector[2] u[N];
   for(k in 1:N){
     u[k,1] = cos(theta[k]);
     u[k,2] = sin(theta[k]);
@@ -41,7 +41,11 @@ model{
   }
   sigma ~ inv_wishart(4,diag_matrix(rep_vector(1,2)));
   for(n in (1+P):N){
-    target += circular_state_lpdf(u[n]|P,theta[(n-1):(n-P)], alpha_0,alpha_1,sigma);
+    vector[P] pre_theta;
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    target += circular_state_lpdf(u[n]|P,pre_theta, alpha_0,alpha_1,sigma);
   }
 }
 
