@@ -56,14 +56,13 @@ We introduce a new approach to a circular time series modeling that based on the
 │   ├── VAR.R (Vector auto regressive関数, 自作関数を作成する参考になるかも)
 │   └── function.R (確率密度関数等, 種々の関数保存ファイル)
 └── stan
-    ├── circularVAR_1.stan (VAR(1) model, errorあり, p次元に拡張したモデルあるので不要)
-    ├── circularVAR_p.stan (VAR(p) model, alpha_0 vectorにnorm1となる制約を付与, パラメータの増大を防げる) 
     ├── circularVAR_p_.stan (VAR(p) model, 全てのパラメータの事前分布を正規分布とする. constに関するパラメータの事前分布をN(0,10), Simgaに関するパラメータの事前分布を小さく設定する)
-    ├── circularVAR_p_norm.stan (VAR(p) model, 平均方向のベクトルのノルムを1にする, 実現不可能) 
-    ├── circularVAR_p_I.stan ( VAR(p) model, 分散構造を単位行列とする, 趣旨に反する)
     ├── circularVAR_p_penalty.stan (平均ベクトルが, 単位円周上付近に存在するとして罰則項を与える)
     ├── circularVAR_p_noconst.stan (const vectorを c(0,0)とする, どんな違いがあるのか調べる) 
     ├── circularVAR_p_sigma_I.stan (det(Sigma)=1として, 制約を置く, その他のパラメータは大きめの正規分布にしてみる) 
+    ├── observation_circular_VAR.stan
+    ├── state_circular_VAR.stan
+    ├── state_obs_circular_VAR.stan 
     └── test.stan (stan codeをR内で使用する際に, 関数式として使用) 
 ```
 
