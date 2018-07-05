@@ -102,9 +102,6 @@ with(tmp, data.frame(lag, acf)) %>% # List のデータフレーム化
   ggplot(mapping = aes(x = lag, y = acf)) +
     geom_hline(aes(yintercept = 0)) +
     geom_segment(mapping = aes(xend = lag, yend = 0))
-```
-
-```{r}
 library(tseries)
 # 相互相関
 ccf(wind_data$cos_real,wind_data$sin_real,type = "correlation")
@@ -174,12 +171,13 @@ d.dat9 <- list(N=length(wind_data$theta_real),P=9,theta=wind_data$theta_real) # 
 d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) # for VAR(10)
 ```
 
+## compile model and fitting test
+
 ```{r stan test, eval=FALSE,include=FALSE}
 #fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
 #fit<-stan(file='stan/test1.stan',data=d.dat,iter=4000,chains=1) # 分散共分散行列の過程
 # compile model
 # model1 <- stan_model('stan/circularVAR_p.stan')
-# model3 <- stan_model('stan/circularVAR_p_I.stan') # 趣旨とずれる
 
 model1 <- stan_model('stan/circularVAR_p_.stan') # 変化なし
 model2 <- stan_model('stan/circularVAR_p_noconst.stan') # no const 
@@ -188,14 +186,19 @@ model4 <- stan_model('stan/circularVAR_p_sigma_I.stan') # det(sigma) = 1
 
 ## state and observation
 state_model <- stan_model('stan/state_circular_VAR.stan') # 正規分布を仮定したVARモデル
+state_model_atanh <- stan_model('stan/state_circular_atanh_VAR.stan') # 正規分布を仮定したVARモデル
 obs_model <- stan_model('stan/observation_circular_VAR.stan') # 正規分布を仮定したVARモデル
 state_obs_model <- stan_model('stan/state_obs_circular_VAR.stan') # 正規分布を仮定したVARモデル
+state_obs_model_atanh <- stan_model('stan/state_obs_circular_atanh_VAR.stan') # 正規分布を仮定したVARモデル
 
 # fitting stan model
 fit_state <- sampling(state_model,data = d.dat1, iter=1000, chains=1)
+fit_state_atanh <- sampling(state_model_atanh,data = d.dat1, iter=1000, chains=1)
 fit_obs <- sampling(obs_model,data = d.dat1, iter=1000, chains=1)
 fit_state_obs <- sampling(state_obs_model,data = d.dat1, iter=1000, chains=1)
+fit_state_obs_atanh <- sampling(state_obs_model_atanh,data = d.dat1, iter=1000, chains=1)
 
+# fitting stan model
 fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
 fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
@@ -207,10 +210,6 @@ fit3_3 <- sampling(model3, data = c(d.dat3,lambda=0.1), iter=1000, chains=1) # E
 fit1_4 <- sampling(model4, data = d.dat1, iter=1000, chains=1) # Execute model
 fit2_4 <- sampling(model4, data = d.dat2, iter=1000, chains=1) # Execute model
 fit10_4 <- sampling(model4, data = d.dat10, iter=1000, chains=1) # Execute model
-
-# fit1_5 <- sampling(model5, data = d.dat1, iter=1000, chains=1) # Execute model
-# fit2_5 <- sampling(model5, data = d.dat2, iter=1000, chains=1) # Execute model
-# fit3_5 <- sampling(model5, data = d.dat3, iter=1000, chains=1) # Execute model
 ```
 
 ## save and load stan code
@@ -221,10 +220,15 @@ saveRDS(model1, "model/circularVAR_p_.rds") # save model
 saveRDS(model2, "model/circularVAR_p_noconst.rds") # save model
 saveRDS(model3, "model/circularVAR_p_penalty.rds") # save model
 saveRDS(model4, "model/circularVAR_p_sigma_I.rds") # save model
+
+## save state space regression model 
 saveRDS(state_model, "model/state_circular_VAR.rds") 
+saveRDS(state_model_atanh, "model/state_circular_atanh_VAR.rds") 
 saveRDS(obs_model, "model/obs_circular_VAR.rds") 
 saveRDS(state_obs_model, "model/state_obs_circular_VAR.rds") 
+saveRDS(state_obs_model_atanh, "model/state_obs_circular_atanh_VAR.rds") 
 
+#### save fit model 
 save(fit1_1, file="fit/circularVAR_1_1.rda")# save fit
 save(fit2_1, file="fit/circularVAR_2_1.rda")# save fit
 save(fit1_2, file="fit/circularVAR_1_2.rda")# save fit
@@ -311,7 +315,9 @@ fit10_4 # model4, VAR(10)model
 options(max.print = 400)
 fit_obs
 fit_state
+fit_state_atanh
 fit_state_obs
+fit_state_obs_atanh
 ```
 
 
@@ -339,8 +345,10 @@ pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
 ```{r}
 # state and observation
 pred_value(fit = fit_state,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit_state_atanh,p = 1,dat=wind_data$theta_real)
 pred_value(fit = fit_obs,p = 1,dat=wind_data$theta_real)
 pred_value(fit = fit_state_obs,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_atanh,p = 1,dat=wind_data$theta_real)
 ```
 
 # output dens arbitrary index
