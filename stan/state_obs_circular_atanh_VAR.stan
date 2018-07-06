@@ -1,4 +1,5 @@
 functions{
+  # state model
   real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
     vector[2*P] tmp; vector[2] mu; real p;
     for(k in 1:P){
@@ -11,6 +12,7 @@ functions{
     p = multi_normal_lpdf(u|mu,sigma);
     return p;
   }
+  # observation model
   real circular_obs_lpdf(real theta, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
     vector[2] u; vector[2] mu; vector[2*P] tmp; 
     real A; real B; real C; real D; real p;
