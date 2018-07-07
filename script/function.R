@@ -71,10 +71,9 @@ dPnCircular_dens <- function(theta,mu,Sigma){
 # Vectorize 関数
 v.dPnCircular_dens <- Vectorize(dPnCircular_dens, "theta") 
 
-# 結果のベクトルを抽出 VAR(p)
-# 結果のベクトルを抽出 VAR(p)
-# lower(point at 2.5%), upper(point at 97.5%)
-ans_stan_p <- function(fit,P,num,data){
+
+########## Var model 用 ##########
+ans_stan_p <- function(fit,P,data){
   # 得られたモデルを抽出する
   fit_ext <- rstan::extract(fit,permuted=T); 
   # Const parameter
@@ -147,10 +146,44 @@ ans_stan_p <- function(fit,P,num,data){
   # return(data.frame(predict= c(rep(NA,P),pred),lower = c(rep(NA,P),pred_low),upper = c(rep(NA,P),pred_up)))  
   return(data.frame(predict= c(rep(NA,P),pred)))
 }
-# output predict value
-pred_value <- function(fit,p,dat){
-  # パラメータ推定値を用いて予測する, 出力はdata.frame形式
-  pred <- ans_stan_p(fit, P=p, data=dat) 
+
+########## ar model 用 ##########
+ans_stan_p2 <- function(fit,P,data){
+  # 得られたモデルを抽出する
+  fit_ext <- rstan::extract(fit,permuted=T); 
+  # Const parameter
+  alpha_0 = fit_ext$alpha_0 %>% mean();
+  # Beta parameter
+  alpha_1 <- c();
+  for(i in 1:P){
+    tmp <- fit_ext$alpha_1[,i] %>% mean(); alpha_1 <- cbind(alpha_1, tmp); 
+  }
+  # Variance-Covariance matrix
+  Sigma = fit_ext$sigma %>% mean()
+  
+  # Estimate condition mean 
+  num = length(data); mu_hat <- c() 
+  for(i in (1+P):num){
+    tmp <- alpha_0 + ( alpha_1 %*% data[(i-1):(i-P)] )
+    mu_hat <- cbind(mu_hat, tmp)
+  }
+  # Estimate moment function
+  fn.theta <- function(k,mu,Sigma) k*dnorm(x=k, mu, Sigma) # theta func
+
+  ########################## Estimate theta value through sin and cos value ################################
+  # Estimate sin and cos value
+  len <- length(mu_hat); theta.mom <- c();
+  for(i in 1:len){
+    theta.mom[i] <- integrate(fn.theta, lower=-Inf, upper=Inf, mu=mu_hat[i], Sigma=Sigma)$value
+  }
+  # Estimate predict theta value
+  return(data.frame(predict= c(rep(NA,P),theta.mom)))
+}
+# output predict value for VAR
+pred_value <- function(fit,p,dat,who=2){
+  # who:1 -> AR model, who:2 -> VAR model
+  if(who == 1){pred <- ans_stan_p2(fit, P=p, data=dat)} # ar model
+  else{pred <- ans_stan_p(fit, P=p, data=dat)} # var model
   # model のRMSE 算出するコード
   data.frame(real=dat,pred) %>% 
     mutate(dif = predict - real) %>% 
@@ -172,6 +205,7 @@ pred_value <- function(fit,p,dat){
     ) +
     labs(y=expression(theta))
 }
+
 
 # output PN distribution in arbitrary index
 PN_dist_pred <- function(fit,index_vec,sample_num,data,P){
@@ -204,7 +238,42 @@ PN_dist_pred <- function(fit,index_vec,sample_num,data,P){
   return(ans_box)
 }
 
-DIC_func <- function(fit,data,dev,P)
+DIC_func_AR <- function(fit,data,dev,P)
+{
+  ## mean.Deviance
+  # data = theta, dev = log PN dist
+  mean.Deviance <- extract_log_lik(fit,"log_likelihood") %>% # nrow = 16000, ncol = n - P,の対数尤度 
+    apply(1, sum) %>% # 各サンプルでの尤度の総和
+    mean() # 各サンプルでの尤度の総和の平均
+  mean.Deviance <- -2 * mean.Deviance # -2倍
+  
+  # 得られたモデルを抽出する
+  fit_ext <- rstan::extract(fit,permuted=T); 
+  # Const parameter
+  alpha_0 = fit_ext$alpha_0 %>% mean();
+  # Beta parameter
+  alpha_1 <- c();
+  for(i in 1:P){
+    tmp <- fit_ext$alpha_1[,i] %>% mean(); alpha_1 <- cbind(alpha_1, tmp); 
+  }
+  # Variance-Covariance matrix
+  Sigma = fit_ext$sigma %>% mean()
+  
+  # Estimate condition mean 
+  num = length(data); mu_hat <- c() 
+  for(i in (1+P):num){
+    tmp <- alpha_0 + ( alpha_1 %*% data[(i-1):(i-P)] )
+    mu_hat <- cbind(mu_hat, tmp)
+  }
+  len <- length(mu_hat); Deviance.mean <- 0; # パラメータの平均値を用いて, 算出した尤度の総和
+  for(i in 1:len){
+    Deviance.mean <- Deviance.mean + (-2 * as.numeric(dev(data[i+P], mu_hat[i], Sigma,log = T)))
+  }
+  pD <- mean.Deviance - Deviance.mean
+  return(c(P = P,mean.Dev=mean.Deviance, Dev.mean=Deviance.mean, pD=mean.Deviance-Deviance.mean, DIC=pD+mean.Deviance) )
+}
+
+DIC_func_VAR <- function(fit,data,dev,P)
 {
   ## mean.Deviance
   # data = theta, dev = log PN dist
