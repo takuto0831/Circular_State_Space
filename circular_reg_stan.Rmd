@@ -45,20 +45,19 @@ library(rstan)
 library(MCMCpack)
 library(loo)
 library(ggmcmc)
+library(tseries)
 ```
 
+# setting
+
 ```{r}
+# load function
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
-# 関数をグローバル変数に表示しない
-.myfunc.env = new.env()
+.myfunc.env = new.env() # 関数をグローバル変数に表示しない
 sys.source('~/Desktop/circular_reg/script/stan_plot_label_helper.R', envir = .myfunc.env) # stan_ac_labelに必要
 sys.source('~/Desktop/circular_reg/script/misc.R', envir = .myfunc.env) # stan_ac_labelに必要
 attach( .myfunc.env )
-```
-
 # set ggplot theme
-
-```{r ggplot setting}
 theme_set(theme_classic(base_size = 18,base_family = "Helvetica"))
 ```
 
@@ -77,19 +76,6 @@ wind_data <- wind %>%
 
 # Basic aggression
 
-```{r,eval=FALSE,include=FALSE}
-# 差分を調べてみる
-# MSE計算で使える ！！！！！！！！！！！！！！！！！！！！！
-wind_dif <- wind_data$theta_real %>% 
-  diff() %>% 
-  data.frame() %>% 
-  mutate(dif = dplyr::if_else(. < -pi, . + 2*pi,
-                              dplyr::if_else(. > pi, . - 2*pi, .)))
-
-ts.plot(wind_dif$dif)
-ts.plot(wind_data$theta_real)
-```
-
 ```{r}
 # 散布図
 data.frame(X= wind_data$theta_real[1:309],Y=wind_data$theta_real[2:310]) %>% 
@@ -102,7 +88,7 @@ with(tmp, data.frame(lag, acf)) %>% # List のデータフレーム化
   ggplot(mapping = aes(x = lag, y = acf)) +
     geom_hline(aes(yintercept = 0)) +
     geom_segment(mapping = aes(xend = lag, yend = 0))
-library(tseries)
+
 # 相互相関
 ccf(wind_data$cos_real,wind_data$sin_real,type = "correlation")
 # 単位根過程
@@ -156,7 +142,7 @@ l_(par)
 
 N: データの長さ, P: ラグ次数, theta: theta の実測値
 
-```{r set data list}
+```{r, set data list}
 # paramter の値も初期値として入力できるようにした設定用
 # para_alpha_1 = 1000, para_alpha_0 = 1000, para_sig = 1000, para_rho = 1000) 
 d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
@@ -172,6 +158,11 @@ d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) 
 ```
 
 ## compile model and fitting test
+
+今回は, 以下の3つについて調査し, 評価する
+- obs_model : PN分布のみ
+- state_obs_model : PN分布 + Normal2分布
+- ar_model : theta が正規分布に従うと仮定した, AR model 
 
 ```{r stan test, eval=FALSE,include=FALSE}
 #fit<-stan(file='stan/test.stan',data=d.dat,iter=1000,chains=1) # sigma(2,2) に対して1を仮定する
@@ -190,6 +181,7 @@ state_model_atanh <- stan_model('stan/state_circular_atanh_VAR.stan') # 正規�
 obs_model <- stan_model('stan/observation_circular_VAR.stan') # 正規分布を仮定したVARモデル
 state_obs_model <- stan_model('stan/state_obs_circular_VAR.stan') # 正規分布を仮定したVARモデル
 state_obs_model_atanh <- stan_model('stan/state_obs_circular_atanh_VAR.stan') # 正規分布を仮定したVARモデル
+ar_model <- stan_model("stan/circular_AR.stan")
 
 # fitting stan model
 fit_state <- sampling(state_model,data = d.dat1, iter=1000, chains=1)
@@ -197,19 +189,7 @@ fit_state_atanh <- sampling(state_model_atanh,data = d.dat1, iter=1000, chains=1
 fit_obs <- sampling(obs_model,data = d.dat1, iter=1000, chains=1)
 fit_state_obs <- sampling(state_obs_model,data = d.dat1, iter=1000, chains=1)
 fit_state_obs_atanh <- sampling(state_obs_model_atanh,data = d.dat1, iter=1000, chains=1)
-
-# fitting stan model
-fit1_1 <- sampling(model1, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2_1 <- sampling(model1, data = d.dat2, iter=1000, chains=1) # Execute model 
-fit1_2 <- sampling(model2, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2_2 <- sampling(model2, data = d.dat2, iter=1000, chains=1) # Execute model
-fit3_2 <- sampling(model2, data = d.dat3, iter=1000, chains=1) # Execute model
-fit1_3 <- sampling(model3, data = c(d.dat1,lambda=0.01), iter=1000, chains=1) # Execute model
-fit2_3 <- sampling(model3, data = c(d.dat2,lambda=0.1), iter=1000, chains=1) # Execute model
-fit3_3 <- sampling(model3, data = c(d.dat3,lambda=0.1), iter=1000, chains=1) # Execute model
-fit1_4 <- sampling(model4, data = d.dat1, iter=1000, chains=1) # Execute model
-fit2_4 <- sampling(model4, data = d.dat2, iter=1000, chains=1) # Execute model
-fit10_4 <- sampling(model4, data = d.dat10, iter=1000, chains=1) # Execute model
+fit_ar1 <- sampling(ar_model,data = d.dat1, iter=1000, chains=1)
 ```
 
 ## save and load stan code
@@ -222,6 +202,7 @@ saveRDS(model3, "model/circularVAR_p_penalty.rds") # save model
 saveRDS(model4, "model/circularVAR_p_sigma_I.rds") # save model
 
 ## save state space regression model 
+saveRDS(ar_model, "model/circular_AR.rds") 
 saveRDS(state_model, "model/state_circular_VAR.rds") 
 saveRDS(state_model_atanh, "model/state_circular_atanh_VAR.rds") 
 saveRDS(obs_model, "model/obs_circular_VAR.rds") 
@@ -248,37 +229,39 @@ load("fit/circularVAR_1_2.rda", verbose = TRUE) # load fit
 load("fit/circularVAR_2_2.rda", verbose = TRUE) # load fit
 ```
 
-```{r stan save model,eval=FALSE,include=FALSE}
-## model 4
-save(fit1_4, file="fit/circularVAR_1_4.rda")# save fit
-save(fit2_4, file="fit/circularVAR_2_4.rda")# save fit
-save(fit3_4, file="fit/circularVAR_3_4.rda")# save fit
-save(fit4_4, file="fit/circularVAR_4_4.rda")# save fit
-save(fit5_4, file="fit/circularVAR_5_4.rda")# save fit
-save(fit6_4, file="fit/circularVAR_6_4.rda")# save fit
-save(fit7_4, file="fit/circularVAR_7_4.rda")# save fit
-save(fit8_4, file="fit/circularVAR_8_4.rda")# save fit
-save(fit9_4, file="fit/circularVAR_9_4.rda")# save fit
-save(fit10_4, file="fit/circularVAR_10_4.rda")# save fit
+## stan fit test
+
+```{r}
+# load model 
+ar_model <- readRDS("model/circular_AR.rds")
+obs_model <- readRDS("model/obs_circular_VAR.rds")
+state_obs_model <- readRDS("model/state_obs_circular_VAR.rds")
 ```
 
-```{r stan load fit}
-#model4
-load("fit/circularVAR_1_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_2_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_3_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_4_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_5_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_6_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_7_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_8_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_9_4.rda", verbose = TRUE) # load fit
-load("fit/circularVAR_10_4.rda", verbose = TRUE) # load fit
+```{r}
+# AR model
+fit_ar_1 <- sampling(ar_model,data = d.dat1, iter=2000, chains=1)
+fit_ar_2 <- sampling(ar_model,data = d.dat2, iter=2000, chains=1)
+fit_ar_3 <- sampling(ar_model,data = d.dat3, iter=2000, chains=1)
+fit_ar_4 <- sampling(ar_model,data = d.dat4, iter=2000, chains=1)
+fit_ar_5 <- sampling(ar_model,data = d.dat5, iter=2000, chains=1)
+# observation model
+fit_obs_1 <- sampling(obs_model,data = d.dat1, iter=2000, chains=1)
+fit_obs_2 <- sampling(obs_model,data = d.dat2, iter=2000, chains=1)
+fit_obs_3 <- sampling(obs_model,data = d.dat3, iter=2000, chains=1)
+fit_obs_4 <- sampling(obs_model,data = d.dat4, iter=2000, chains=1)
+fit_obs_5 <- sampling(obs_model,data = d.dat5, iter=2000, chains=1)
+# state space model
+fit_state_obs_1 <- sampling(state_obs_model,data = d.dat1, iter=2000, chains=1)
+fit_state_obs_2 <- sampling(state_obs_model,data = d.dat2, iter=2000, chains=1)
+fit_state_obs_3 <- sampling(state_obs_model,data = d.dat3, iter=2000, chains=1)
+fit_state_obs_4 <- sampling(state_obs_model,data = d.dat4, iter=2000, chains=1)
+fit_state_obs_5 <- sampling(state_obs_model,data = d.dat5, iter=2000, chains=1)
 ```
 
-## stan parallel processing code
 
 ```{r stan Parallel processing, eval=FALSE}
+## stan parallel processing code
 rstan_options(auto_write=TRUE) # auto save
 options(mc.cores=parallel::detectCores()) # multi core
 
@@ -295,65 +278,59 @@ fit9_4 <- sampling(model4, data = d.dat9, iter = 5000, warmup=1000, chains = 4)
 fit10_4 <- sampling(model4, data = d.dat10, iter = 5000, warmup=1000, chains = 4)
 ```
 
-# output fit paremter
+# diagnosis model
+
+- 結果の表示
+- DIC, WAIC の計算
+- 予測およびRMSE
+
+## output fit paremter
 
 ```{r}
 options(max.print = 400)
-fit1_4 # model4, VAR(1)model
-fit2_4 # model4, VAR(2)model
-fit3_4 # model4, VAR(3)model
-fit4_4 # model4, VAR(4)model
-fit5_4 # model4, VAR(5)model
-fit6_4 # model4, VAR(6)model
-fit7_4 # model4, VAR(7)model
-fit8_4 # model4, VAR(8)model
-fit9_4 # model4, VAR(9)model
-fit10_4 # model4, VAR(10)model
+fit_ar_1
+fit_ar_2
+fit_ar_3
+fit_ar_4
+fit_ar_5
+fit_obs_1
+fit_obs_2
+fit_obs_3
+fit_obs_4
+fit_obs_5
+fit_state_obs_1
+fit_state_obs_2
+fit_state_obs_3
+fit_state_obs_4
+fit_state_obs_5
 ```
 
-```{r}
-options(max.print = 400)
-fit_obs
-fit_state
-fit_state_atanh
-fit_state_obs
-fit_state_obs_atanh
-```
-
-
-# output predict value
-
-```{r}
-#model4
-pred_value(fit = fit1_4,p = 1,dat=wind_data$theta_real)
-pred_value(fit = fit2_4,p = 2,dat=wind_data$theta_real)
-pred_value(fit = fit3_4,p = 3,dat=wind_data$theta_real)
-pred_value(fit = fit4_4,p = 4,dat=wind_data$theta_real)
-pred_value(fit = fit5_4,p = 5,dat=wind_data$theta_real)
-pred_value(fit = fit6_4,p = 6,dat=wind_data$theta_real)
-pred_value(fit = fit7_4,p = 7,dat=wind_data$theta_real)
-pred_value(fit = fit8_4,p = 8,dat=wind_data$theta_real)
-pred_value(fit = fit9_4,p = 9,dat=wind_data$theta_real)
-pred_value(fit = fit10_4,p = 10,dat=wind_data$theta_real)
-
-# # model5
-# pred_value(fit = fit1_5,p = 1,dat=wind_data$theta_real)
-# pred_value(fit = fit2_5,p = 2,dat=wind_data$theta_real)
-# pred_value(fit = fit3_5,p = 3,dat=wind_data$theta_real)
-```
+## output predict value and RMSE
 
 ```{r}
 # state and observation
-pred_value(fit = fit_state,p = 1,dat=wind_data$theta_real)
-pred_value(fit = fit_state_atanh,p = 1,dat=wind_data$theta_real)
-pred_value(fit = fit_obs,p = 1,dat=wind_data$theta_real)
-pred_value(fit = fit_state_obs,p = 1,dat=wind_data$theta_real)
-pred_value(fit = fit_state_obs_atanh,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_1,p = 1,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_1,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_1,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_2,p = 2,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_2,p = 2,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_2,p = 2,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_3,p = 3,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_3,p = 3,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_3,p = 3,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_4,p = 4,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_4,p = 4,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_4,p = 4,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_5,p = 5,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_5,p = 5,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_5,p = 5,dat=wind_data$theta_real)
 ```
 
-# output dens arbitrary index
+## output dens arbitrary index
 
-```{r}
+- 未使用 
+
+```{r,eval=FALSE}
 tmp <- PN_dist_pred(fit = fit1_4,index_vec = c(50,100,300),sample_num = 16000,data = wind_data$theta_real,P=1)
 tmp %>% 
   gather(-id,key="index",value = "value") %>% 
@@ -362,9 +339,91 @@ tmp %>%
     labs(x= expression(theta))
 ```
 
-# Diagnosis
+## Estimate DIC
+
+```{r}
+DIC_func_AR(fit = fit_ar_1, data = wind_data$theta_real, dev = dnorm, P =1)
+DIC_func_AR(fit = fit_ar_2, data = wind_data$theta_real, dev = dnorm, P =2)
+DIC_func_AR(fit = fit_ar_3, data = wind_data$theta_real, dev = dnorm, P =3)
+DIC_func_AR(fit = fit_ar_4, data = wind_data$theta_real, dev = dnorm, P =4)
+DIC_func_AR(fit = fit_ar_5, data = wind_data$theta_real, dev = dnorm, P =5)
+
+DIC_func_VAR(fit = fit_obs_1, data = wind_data$theta_real, dev = PnCircular_log, P =1)
+DIC_func_VAR(fit = fit_obs_2, data = wind_data$theta_real, dev = PnCircular_log, P =2)
+DIC_func_VAR(fit = fit_obs_3, data = wind_data$theta_real, dev = PnCircular_log, P =3)
+DIC_func_VAR(fit = fit_obs_4, data = wind_data$theta_real, dev = PnCircular_log, P =4)
+DIC_func_VAR(fit = fit_obs_5, data = wind_data$theta_real, dev = PnCircular_log, P =5)
+
+DIC_func_VAR(fit = fit_state_obs_1, data = wind_data$theta_real, dev = PnCircular_log, P =1)
+DIC_func_VAR(fit = fit_state_obs_2, data = wind_data$theta_real, dev = PnCircular_log, P =2)
+DIC_func_VAR(fit = fit_state_obs_3, data = wind_data$theta_real, dev = PnCircular_log, P =3)
+DIC_func_VAR(fit = fit_state_obs_4, data = wind_data$theta_real, dev = PnCircular_log, P =4)
+DIC_func_VAR(fit = fit_state_obs_5, data = wind_data$theta_real, dev = PnCircular_log, P =5)
+```
+
+## Estimate waic
+
+各モデルに対する, WAICを計算する. 
+
+```{r}
+extract_log_lik(fit_ar_1,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit_ar_2,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit_ar_3,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit_ar_4,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit_ar_5,"log_likelihood") %>% loo::waic() # VAR(5) model
+
+extract_log_lik(fit_obs_1,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit_obs_2,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit_obs_3,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit_obs_4,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit_obs_5,"log_likelihood") %>% loo::waic() # VAR(5) model
+
+extract_log_lik(fit_state_obs_1,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit_state_obs_2,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit_state_obs_3,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit_state_obs_4,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit_state_obs_5,"log_likelihood") %>% loo::waic() # VAR(5) model
+```
+
+# Diagnosis by myself
+
+- 自作した, 検証用関数
+- AICについて計算が正しいのかわからない
 
 ```{r,eval=FALSE}
+# AICを計算する, 4chain * 4000 sample = 16000個, 16000 * (310 - p)の対数尤度が記録されている
+# 各sampleの対数尤度を足す, max? mean? を計算して, 有効パラメータ数を足す
+aic_ <- function(fit,k){
+  log_lik <- c(); a <- extract_log_lik(fit,"log_likelihood");
+  for( i in 1:dim(a)[1]) log_lik <- append(log_lik,a[i,] %>% sum()) 
+  AIC <- -2*max(log_lik) + (2 + 4*k + 2)
+  return(AIC)
+}
+
+# algorithm に従って WAIC計算, 確認用
+# loo::waic() を 2n で割った値に相当する
+waic_ <- function(log_likelihood) {
+ lpd_hat <- mean(log(colMeans(exp(log_likelihood))))
+ p_hat <- mean(colMeans(log_likelihood^2) - colMeans(log_likelihood)^2)
+ waic <- - lpd_hat + p_hat
+ return(waic)
+}
+
+# 得られた結果から対数尤度を計算し, サンプリング数に対応する対数尤度のヒストグラム, 対数尤度の最大値, 最小値を示す.
+extract_likelihood <- function(fit){
+  log_lik <- c(); a <- extract_log_lik(fit,"log_likelihood");
+  for( i in 1:dim(a)[1]) log_lik <- append(log_lik,a[i,] %>% sum()) 
+  sprintf("max log_lik = %f, min log_lik = %f", max(log_lik),min(log_lik)) %>% print()
+  hist(log_lik)
+}
+```
+
+
+## Code for slide
+
+- slide 作成に用いたコード等の保管場所
+
+```{r,eval=FALSE,include=FALSE,echo=FALSE}
 shinystan::launch_shinystan(fit) # 基本的な分析これで全て見れる
 get_posterior_mean(fit1_4) # chainごとのパラメータ見れる
 get_inits(fit1_4) # 要確認
@@ -388,37 +447,8 @@ label_set = list("alpha_0[1]" = expression(alpha[paste("c,",0)]), "alpha_0[2]" =
 label_func <- function(variable, value) return(label_set[value])
 
 stan_ac_label(object=fit1_4,pars = pars,label_set = label_func)
-```
 
-# log_likelihood
-
-得られた結果から対数尤度を計算し, サンプリング数に対応する対数尤度のヒストグラム, 対数尤度の最大値, 最小値を示す.
-
-```{r}
-extract_likelihood <- function(fit){
-  log_lik <- c(); a <- extract_log_lik(fit,"log_likelihood");
-  for( i in 1:dim(a)[1]) log_lik <- append(log_lik,a[i,] %>% sum()) 
-  sprintf("max log_lik = %f, min log_lik = %f", max(log_lik),min(log_lik)) %>% print()
-  hist(log_lik)
-}
-```
-
-```{r}
-extract_likelihood(fit1_4) # VAR(1) model
-extract_likelihood(fit2_4) # VAR(2) model
-extract_likelihood(fit3_4) # VAR(3) model
-extract_likelihood(fit4_4) # VAR(4) model
-extract_likelihood(fit5_4) # VAR(5) model
-extract_likelihood(fit6_4) # VAR(6) model
-extract_likelihood(fit7_4) # VAR(7) model
-extract_likelihood(fit8_4) # VAR(8) model
-extract_likelihood(fit9_4) # VAR(9) model
-extract_likelihood(fit10_4) # VAR(10) model
-```
-
-# Estimate DIC
-
-```{r}
+# slide 作成で簡単に表を作成する
 (DIC_func(fit = fit1_4, data = wind_data$theta_real, dev = PnCircular_log, P =1) -> a)
 (DIC_func(fit = fit2_4, data = wind_data$theta_real, dev = PnCircular_log, P =2) -> b)
 (DIC_func(fit = fit3_4, data = wind_data$theta_real, dev = PnCircular_log, P =3) -> c)
@@ -431,111 +461,3 @@ extract_likelihood(fit10_4) # VAR(10) model
 (DIC_func(fit = fit10_4, data = wind_data$theta_real, dev = PnCircular_log, P =10) -> j)
 data.frame(a[5],b[5],c[5],d[5],e[5],f[5],g[5],h[5],i[5],j[5]) %>% kable(format = "latex")
 ```
-
-# Estimate waic
-
-各モデルに対する, WAICを計算する. 
-
-```{r}
-extract_log_lik(fit,"log_likelihood") %>%  loo::waic()
-# model4
-extract_log_lik(fit1_4,"log_likelihood") %>% loo::waic() # VAR(1) model
-extract_log_lik(fit2_4,"log_likelihood") %>% loo::waic() # VAR(2) model
-extract_log_lik(fit3_4,"log_likelihood") %>% loo::waic() # VAR(3) model
-extract_log_lik(fit4_4,"log_likelihood") %>% loo::waic() # VAR(4) model
-extract_log_lik(fit5_4,"log_likelihood") %>% loo::waic() # VAR(5) model
-extract_log_lik(fit6_4,"log_likelihood") %>% loo::waic() # VAR(6) model
-extract_log_lik(fit7_4,"log_likelihood") %>% loo::waic() # VAR(7) model
-extract_log_lik(fit8_4,"log_likelihood") %>% loo::waic() # VAR(8) model
-extract_log_lik(fit9_4,"log_likelihood") %>% loo::waic() # VAR(9) model
-extract_log_lik(fit10_4,"log_likelihood") %>% loo::waic() # VAR(10) model
-```
-
-
-```{r,eval=FALSE}
-# algorithm に従って計算, 確認用
-# loo::waic() を 2n で割った値に相当する
-waic_ <- function(log_likelihood) {
- lpd_hat <- mean(log(colMeans(exp(log_likelihood))))
- p_hat <- mean(colMeans(log_likelihood^2) - colMeans(log_likelihood)^2)
- waic <- - lpd_hat + p_hat
- return(waic)
-}
-extract_log_lik(fit1_4,"log_likelihood") %>% waic_ # VAR(1) model
-extract_log_lik(fit2_4,"log_likelihood") %>% waic_ # VAR(2) model
-extract_log_lik(fit3_4,"log_likelihood") %>% waic_ # VAR(3) model
-extract_log_lik(fit4_4,"log_likelihood") %>% waic_ # VAR(4) model
-extract_log_lik(fit5_4,"log_likelihood") %>% waic_ # VAR(5) model
-extract_log_lik(fit6_4,"log_likelihood") %>% waic_ # VAR(6) model
-extract_log_lik(fit7_4,"log_likelihood") %>% waic_ # VAR(7) model
-extract_log_lik(fit8_4,"log_likelihood") %>% waic_ # VAR(8) model
-extract_log_lik(fit9_4,"log_likelihood") %>% waic_ # VAR(9) model
-extract_log_lik(fit10_4,"log_likelihood") %>% waic_ # VAR(10) model
-```
-
-```{r,eval=FALSE,include=FALSE}
-# model1
-log_lik1 <- extract_log_lik(fit1_1,"log_likelihood")
-loo::waic(log_lik1)
-log_lik2 <- extract_log_lik(fit2_1,"log_likelihood")
-loo::waic(log_lik2)
-
-# model2
-log_lik1 <- extract_log_lik(fit1_2,"log_likelihood")
-loo::waic(log_lik1)
-log_lik2 <- extract_log_lik(fit2_2,"log_likelihood")
-loo::waic(log_lik2)
-
-# model3
-extract_log_lik(fit3_2,"log_likelihood") %>% loo::waic()
-extract_log_lik(fit3_5,"log_likelihood") %>% loo::waic()
-
-# model4
-log_lik1 <- extract_log_lik(fit4_2,"log_likelihood")
-loo::waic(log_lik1)
-log_lik2 <- extract_log_lik(fit4_4,"log_likelihood")
-loo::waic(log_lik2)
-
-# model5
-extract_log_lik(fit2_5,"log_likelihood") %>% loo::waic()
-extract_log_lik(fit3_5,"log_likelihood") %>% loo::waic()
-```
-
-# looic
-
-```{r,eval=FALSE}
-get_loo <- function(model) {
-  log_lik <- extract_log_lik(model,"log_likelihood", merge_chains=FALSE)
-  r_eff <- relative_eff(exp(log_lik))
-  loo(log_lik, r_eff=r_eff, cores=4)
-}
-get_loo(fit1_4)
-get_loo(fit2_4)
-get_loo(fit3_4)
-```
-
-
-# AIC
-
-```{r,eval=FALSE}
-# AICを計算する, 4chain * 4000 sample = 16000個, 16000 * (310 - p)の対数尤度が記録されている
-# 各sampleの対数尤度を足す
-# max? mean? を計算して, 有効パラメータ数を足す
-aic_ <- function(fit,k){
-  log_lik <- c(); a <- extract_log_lik(fit,"log_likelihood");
-  for( i in 1:dim(a)[1]) log_lik <- append(log_lik,a[i,] %>% sum()) 
-  AIC <- -2*max(log_lik) + (2 + 4*k + 2)
-  return(AIC)
-}
-aic_(fit1_4,k=1) # VAR(1) model
-aic_(fit2_4,k=2) # VAR(2) model
-aic_(fit3_4,k=3) # VAR(3) model
-aic_(fit4_4,k=4) # VAR(4) model
-aic_(fit5_4,k=5) # VAR(5) model
-aic_(fit6_4,k=6) # VAR(6) model
-aic_(fit7_4,k=7) # VAR(7) model
-aic_(fit8_4,k=8) # VAR(8) model
-aic_(fit9_4,k=9) # VAR(9) model
-aic_(fit10_4,k=10) # VAR(10) model
-```
-
