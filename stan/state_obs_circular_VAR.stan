@@ -1,16 +1,16 @@
 functions{
+  // state model
   real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
     vector[2*P] tmp; vector[2] mu; real p;
     for(k in 1:P){
       tmp[2*k-1] = cos(pre_theta[k]); 
       tmp[2*k] = sin(pre_theta[k]);
-      //tmp[2*k-1] = atanh(cos(pre_theta[k])); 
-      //tmp[2*k] = atanh(sin(pre_theta[k]));
     }
     mu = alpha_0 + ( alpha_1 * tmp); 
     p = multi_normal_lpdf(u|mu,sigma);
     return p;
   }
+  // observation model
   real circular_obs_lpdf(real theta, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
     vector[2] u; vector[2] mu; vector[2*P] tmp; 
     real A; real B; real C; real D; real p;
@@ -64,5 +64,17 @@ model{
     target += circular_state_lpdf(u[n]|P,pre_theta, alpha_0,alpha_1,sigma);
     target += circular_obs_lpdf(theta[n]|P,pre_theta,alpha_0,alpha_1,sigma);
   }
+}
+
+generated quantities{
+  vector[N-P] log_likelihood;
+  for(n in (1+P):N){
+    vector[P] pre_theta;
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    log_likelihood[n-P] = circular_state_lpdf(u[n]|P,pre_theta, alpha_0,alpha_1,sigma) + 
+                          circular_obs_lpdf(theta[n]|P, pre_theta, alpha_0, alpha_1, sigma);
+  } 
 }
 
