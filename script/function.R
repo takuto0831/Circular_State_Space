@@ -191,7 +191,8 @@ pred_value <- function(fit,p,dat,who=2){
                                  dplyr::if_else(dif > pi, dif - 2*pi, dif))) %>% # 誤差は必ず -pi ~ pi に含まれる
     mutate(eps = dif_^2) %>% 
     summarise(ans = sqrt(mean(eps,na.rm = TRUE))) %>% 
-    sprintf("RMSE of VAR(%d) model = %f",p,.) %>%  print() # Root Mean Square Error
+    {paste("RMSE of", fit@model_name, "model.",sprintf("lag = %d, RMSE  = %f",p,.),sep = " ")} %>% 
+    print() # Root Mean Square Error
   # 予測値, 真値, 信用区間を表示する
   data.frame(real=dat,pred) %>% 
     mutate(index = row_number()) %>%
