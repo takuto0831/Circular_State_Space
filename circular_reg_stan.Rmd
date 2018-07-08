@@ -238,6 +238,8 @@ obs_model <- readRDS("model/obs_circular_VAR.rds")
 state_obs_model <- readRDS("model/state_obs_circular_VAR.rds")
 ```
 
+### test fitting 
+
 ```{r}
 # AR model
 fit_ar_1 <- sampling(ar_model,data = d.dat1, iter=2000, chains=1)
@@ -259,9 +261,9 @@ fit_state_obs_4 <- sampling(state_obs_model,data = d.dat4, iter=2000, chains=1)
 fit_state_obs_5 <- sampling(state_obs_model,data = d.dat5, iter=2000, chains=1)
 ```
 
+### parallel processing 
 
 ```{r stan Parallel processing, eval=FALSE}
-## stan parallel processing code
 rstan_options(auto_write=TRUE) # auto save
 options(mc.cores=parallel::detectCores()) # multi core
 
@@ -287,22 +289,22 @@ fit10_4 <- sampling(model4, data = d.dat10, iter = 5000, warmup=1000, chains = 4
 ## output fit paremter
 
 ```{r}
-options(max.print = 400)
-fit_ar_1
-fit_ar_2
-fit_ar_3
-fit_ar_4
-fit_ar_5
-fit_obs_1
-fit_obs_2
-fit_obs_3
-fit_obs_4
-fit_obs_5
-fit_state_obs_1
-fit_state_obs_2
-fit_state_obs_3
-fit_state_obs_4
-fit_state_obs_5
+# options(max.print = 400)
+fit_ar_1 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_2 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_3 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_4 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_5 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_1 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_2 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_3 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_4 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_5 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_1 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_2 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_3 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_4 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_5 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 ```
 
 ## output predict value and RMSE
