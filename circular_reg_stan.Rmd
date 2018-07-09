@@ -247,18 +247,33 @@ fit_ar_2 <- sampling(ar_model,data = d.dat2, iter=2000, chains=1)
 fit_ar_3 <- sampling(ar_model,data = d.dat3, iter=2000, chains=1)
 fit_ar_4 <- sampling(ar_model,data = d.dat4, iter=2000, chains=1)
 fit_ar_5 <- sampling(ar_model,data = d.dat5, iter=2000, chains=1)
+fit_ar_6 <- sampling(ar_model,data = d.dat6, iter=2000, chains=1)
+fit_ar_7 <- sampling(ar_model,data = d.dat7, iter=2000, chains=1)
+fit_ar_8 <- sampling(ar_model,data = d.dat8, iter=2000, chains=1)
+fit_ar_9 <- sampling(ar_model,data = d.dat9, iter=2000, chains=1)
+fit_ar_10 <- sampling(ar_model,data = d.dat10, iter=2000, chains=1)
 # observation model
 fit_obs_1 <- sampling(obs_model,data = d.dat1, iter=2000, chains=1)
 fit_obs_2 <- sampling(obs_model,data = d.dat2, iter=2000, chains=1)
 fit_obs_3 <- sampling(obs_model,data = d.dat3, iter=2000, chains=1)
 fit_obs_4 <- sampling(obs_model,data = d.dat4, iter=2000, chains=1)
 fit_obs_5 <- sampling(obs_model,data = d.dat5, iter=2000, chains=1)
+fit_obs_6 <- sampling(obs_model,data = d.dat6, iter=2000, chains=1)
+fit_obs_7 <- sampling(obs_model,data = d.dat7, iter=2000, chains=1)
+fit_obs_8 <- sampling(obs_model,data = d.dat8, iter=2000, chains=1)
+fit_obs_9 <- sampling(obs_model,data = d.dat9, iter=2000, chains=1)
+fit_obs_10 <- sampling(obs_model,data = d.dat10, iter=2000, chains=1)
 # state space model
 fit_state_obs_1 <- sampling(state_obs_model,data = d.dat1, iter=2000, chains=1)
 fit_state_obs_2 <- sampling(state_obs_model,data = d.dat2, iter=2000, chains=1)
 fit_state_obs_3 <- sampling(state_obs_model,data = d.dat3, iter=2000, chains=1)
 fit_state_obs_4 <- sampling(state_obs_model,data = d.dat4, iter=2000, chains=1)
 fit_state_obs_5 <- sampling(state_obs_model,data = d.dat5, iter=2000, chains=1)
+fit_state_obs_6 <- sampling(state_obs_model,data = d.dat6, iter=2000, chains=1)
+fit_state_obs_7 <- sampling(state_obs_model,data = d.dat7, iter=2000, chains=1)
+fit_state_obs_8 <- sampling(state_obs_model,data = d.dat8, iter=2000, chains=1)
+fit_state_obs_9 <- sampling(state_obs_model,data = d.dat9, iter=2000, chains=1)
+fit_state_obs_10 <- sampling(state_obs_model,data = d.dat10, iter=2000, chains=1)
 ```
 
 ### parallel processing 
@@ -295,16 +310,34 @@ fit_ar_2 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_ar_3 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_ar_4 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_ar_5 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_6 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_7 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_8 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_9 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_ar_10 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+
 fit_obs_1 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_obs_2 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_obs_3 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_obs_4 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_obs_5 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_6 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_7 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_8 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_9 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_obs_10 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+
+
 fit_state_obs_1 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_state_obs_2 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_state_obs_3 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_state_obs_4 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 fit_state_obs_5 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_6 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_7 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_8 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_9 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
+fit_state_obs_10 %>% print(pars=c("alpha_0", "alpha_1","sigma"))
 ```
 
 ## output predict value and RMSE
@@ -326,6 +359,21 @@ pred_value(fit = fit_state_obs_4,p = 4,dat=wind_data$theta_real)
 pred_value(fit = fit_ar_5,p = 5,dat=wind_data$theta_real,who = 1)
 pred_value(fit = fit_obs_5,p = 5,dat=wind_data$theta_real)
 pred_value(fit = fit_state_obs_5,p = 5,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_6,p = 6,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_6,p = 6,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_6,p = 6,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_7,p = 7,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_7,p = 7,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_7,p = 7,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_8,p = 8,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_8,p = 8,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_8,p = 8,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_9,p = 9,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_9,p = 9,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_9,p = 9,dat=wind_data$theta_real)
+pred_value(fit = fit_ar_10,p = 10,dat=wind_data$theta_real,who = 1)
+pred_value(fit = fit_obs_10,p = 10,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_10,p = 10,dat=wind_data$theta_real)
 ```
 
 ## output dens arbitrary index
@@ -349,18 +397,33 @@ DIC_func_AR(fit = fit_ar_2, data = wind_data$theta_real, dev = dnorm, P =2)
 DIC_func_AR(fit = fit_ar_3, data = wind_data$theta_real, dev = dnorm, P =3)
 DIC_func_AR(fit = fit_ar_4, data = wind_data$theta_real, dev = dnorm, P =4)
 DIC_func_AR(fit = fit_ar_5, data = wind_data$theta_real, dev = dnorm, P =5)
+DIC_func_AR(fit = fit_ar_6, data = wind_data$theta_real, dev = dnorm, P =6)
+DIC_func_AR(fit = fit_ar_7, data = wind_data$theta_real, dev = dnorm, P =7)
+DIC_func_AR(fit = fit_ar_8, data = wind_data$theta_real, dev = dnorm, P =8)
+DIC_func_AR(fit = fit_ar_9, data = wind_data$theta_real, dev = dnorm, P =9)
+DIC_func_AR(fit = fit_ar_10, data = wind_data$theta_real, dev = dnorm, P =10)
 
 DIC_func_VAR(fit = fit_obs_1, data = wind_data$theta_real, dev = PnCircular_log, P =1)
 DIC_func_VAR(fit = fit_obs_2, data = wind_data$theta_real, dev = PnCircular_log, P =2)
 DIC_func_VAR(fit = fit_obs_3, data = wind_data$theta_real, dev = PnCircular_log, P =3)
 DIC_func_VAR(fit = fit_obs_4, data = wind_data$theta_real, dev = PnCircular_log, P =4)
 DIC_func_VAR(fit = fit_obs_5, data = wind_data$theta_real, dev = PnCircular_log, P =5)
+DIC_func_VAR(fit = fit_obs_6, data = wind_data$theta_real, dev = PnCircular_log, P =6)
+DIC_func_VAR(fit = fit_obs_7, data = wind_data$theta_real, dev = PnCircular_log, P =7)
+DIC_func_VAR(fit = fit_obs_8, data = wind_data$theta_real, dev = PnCircular_log, P =8)
+DIC_func_VAR(fit = fit_obs_9, data = wind_data$theta_real, dev = PnCircular_log, P =9)
+DIC_func_VAR(fit = fit_obs_10, data = wind_data$theta_real, dev = PnCircular_log, P =10)
 
 DIC_func_VAR(fit = fit_state_obs_1, data = wind_data$theta_real, dev = PnCircular_log, P =1)
 DIC_func_VAR(fit = fit_state_obs_2, data = wind_data$theta_real, dev = PnCircular_log, P =2)
 DIC_func_VAR(fit = fit_state_obs_3, data = wind_data$theta_real, dev = PnCircular_log, P =3)
 DIC_func_VAR(fit = fit_state_obs_4, data = wind_data$theta_real, dev = PnCircular_log, P =4)
 DIC_func_VAR(fit = fit_state_obs_5, data = wind_data$theta_real, dev = PnCircular_log, P =5)
+DIC_func_VAR(fit = fit_state_obs_6, data = wind_data$theta_real, dev = PnCircular_log, P =6)
+DIC_func_VAR(fit = fit_state_obs_7, data = wind_data$theta_real, dev = PnCircular_log, P =7)
+DIC_func_VAR(fit = fit_state_obs_8, data = wind_data$theta_real, dev = PnCircular_log, P =8)
+DIC_func_VAR(fit = fit_state_obs_9, data = wind_data$theta_real, dev = PnCircular_log, P =9)
+DIC_func_VAR(fit = fit_state_obs_10, data = wind_data$theta_real, dev = PnCircular_log, P =10)
 ```
 
 ## Estimate waic
@@ -373,18 +436,33 @@ extract_log_lik(fit_ar_2,"log_likelihood") %>% loo::waic() # VAR(2) model
 extract_log_lik(fit_ar_3,"log_likelihood") %>% loo::waic() # VAR(3) model
 extract_log_lik(fit_ar_4,"log_likelihood") %>% loo::waic() # VAR(4) model
 extract_log_lik(fit_ar_5,"log_likelihood") %>% loo::waic() # VAR(5) model
+extract_log_lik(fit_ar_6,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit_ar_7,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit_ar_8,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit_ar_9,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit_ar_10,"log_likelihood") %>% loo::waic() # VAR(5) model
 
 extract_log_lik(fit_obs_1,"log_likelihood") %>% loo::waic() # VAR(1) model
 extract_log_lik(fit_obs_2,"log_likelihood") %>% loo::waic() # VAR(2) model
 extract_log_lik(fit_obs_3,"log_likelihood") %>% loo::waic() # VAR(3) model
 extract_log_lik(fit_obs_4,"log_likelihood") %>% loo::waic() # VAR(4) model
 extract_log_lik(fit_obs_5,"log_likelihood") %>% loo::waic() # VAR(5) model
+extract_log_lik(fit_obs_6,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit_obs_7,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit_obs_8,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit_obs_9,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit_obs_10,"log_likelihood") %>% loo::waic() # VAR(5) model
 
 extract_log_lik(fit_state_obs_1,"log_likelihood") %>% loo::waic() # VAR(1) model
 extract_log_lik(fit_state_obs_2,"log_likelihood") %>% loo::waic() # VAR(2) model
 extract_log_lik(fit_state_obs_3,"log_likelihood") %>% loo::waic() # VAR(3) model
 extract_log_lik(fit_state_obs_4,"log_likelihood") %>% loo::waic() # VAR(4) model
 extract_log_lik(fit_state_obs_5,"log_likelihood") %>% loo::waic() # VAR(5) model
+extract_log_lik(fit_state_obs_6,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit_state_obs_7,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit_state_obs_8,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit_state_obs_9,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit_state_obs_10,"log_likelihood") %>% loo::waic() # VAR(5) model
 ```
 
 # Diagnosis by myself
