@@ -1,0 +1,51 @@
+---
+title: "How to predict the wind direction"
+subtitle: "TokyoR"
+date: "15 July 2018"
+author: "Takuto Kotsubo"
+output:
+  revealjs::revealjs_presentation:
+    reveal_option:
+      slideNumber: true
+      center: true
+    theme: sky
+editor_options: 
+  chunk_output_type: console
+font-family: 'Helvetica'
+---
+
+```{r knitr_init, echo=FALSE, cache=FALSE}
+## Global options
+#options(max.print="500")
+knitr:::opts_chunk$set(cache=FALSE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+knitr:::opts_knit$set(width=75)
+```
+
+## Table of content
+
+- Self-Introduction
+- Introduction of Circular Package
+- Introduction of Auto Regressive model
+- Can I apply the Auto Regressive model to the Circular data
+- Build a Auto Regressive model based on the Circular data
+
+## Self-Introduction
+
+- Name: Takuto Kotsubo
+- Twitter: airspace_nobo
+- Affiliation: Graduate School of Engineering, Tokyo University of Science
+- Major: Time series analysis
+- Hobby: Shogi, Bouldering
+
+# Introduction of Circular Package
+
+# Introduction of Auto Regressive model (AR model)
+
+# Can I apply the AR model to the Circular data 
+
+# Build a Auto Regressive model based on the Circular data
