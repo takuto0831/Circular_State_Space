@@ -182,6 +182,7 @@ obs_model <- stan_model('stan/observation_circular_VAR.stan') # 正規分布を�
 state_obs_model <- stan_model('stan/state_obs_circular_VAR.stan') # 正規分布を仮定したVARモデル
 state_obs_model_atanh <- stan_model('stan/state_obs_circular_atanh_VAR.stan') # 正規分布を仮定したVARモデル
 ar_model <- stan_model("stan/circular_AR.stan")
+ar2_model <- stan_model("stan/circular_AR_.stan") # StanとRでベイズ統計モデリングを参考に事後分布から、予測曲線を描く方法について検証
 
 # fitting stan model
 fit_state <- sampling(state_model,data = d.dat1, iter=1000, chains=1)
@@ -190,6 +191,8 @@ fit_obs <- sampling(obs_model,data = d.dat1, iter=1000, chains=1)
 fit_state_obs <- sampling(state_obs_model,data = d.dat1, iter=1000, chains=1)
 fit_state_obs_atanh <- sampling(state_obs_model_atanh,data = d.dat1, iter=1000, chains=1)
 fit_ar1 <- sampling(ar_model,data = d.dat1, iter=1000, chains=1)
+fit <- sampling(ar2_model,data = d.dat1, iter=1000, chains=1)
+
 ```
 
 ## save and load stan code
@@ -203,6 +206,7 @@ saveRDS(model4, "model/circularVAR_p_sigma_I.rds") # save model
 
 ## save state space regression model 
 saveRDS(ar_model, "model/circular_AR.rds") 
+saveRDS(ar2_model, "model/circular_AR2.rds") 
 saveRDS(state_model, "model/state_circular_VAR.rds") 
 saveRDS(state_model_atanh, "model/state_circular_atanh_VAR.rds") 
 saveRDS(obs_model, "model/obs_circular_VAR.rds") 
@@ -234,6 +238,7 @@ load("fit/circularVAR_2_2.rda", verbose = TRUE) # load fit
 ```{r}
 # load model 
 ar_model <- readRDS("model/circular_AR.rds")
+ar2_model <- readRDS("model/circular_AR2.rds") 
 obs_model <- readRDS("model/obs_circular_VAR.rds")
 state_obs_model <- readRDS("model/state_obs_circular_VAR.rds")
 ```
