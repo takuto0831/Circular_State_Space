@@ -43,14 +43,20 @@ We introduce a new approach to a circular time series modeling that based on the
 ├── circular_reg_optim.Rmd (実データ分析用, optim関数, Rsolnp関数, 制約付き実行可能)
 ├── circular_reg_sim.Rmd (simulation data 分析用, 作成途中)
 ├── circular_reg_stan.Rmd (MCMCによる推定, VAR(p) model まで一通り作成)
-├── circular_test.Rmd 
-├── circular_test.html
 ├── csv
 │   └── nerima_wind.csv
-├── fit
-├── model
-│   ├── circularVAR_p_1.rds (circularVAR_p.stanによるstan model) 
-│   └── circularVAR_p_2.rds (circularVAR_p_.stanによるstan model)
+├── fit (Not push)
+├── model (Not push)
+│   ├── circularVAR_p_.rds
+│   ├── circularVAR_p_noconst.rds
+│   ├── circularVAR_p_penalty.rds
+│   ├── circularVAR_p_sigma_I.rds
+│   ├── circular_AR.rds
+│   ├── obs_circular_VAR.rds
+│   ├── state_circular_VAR.rds
+│   ├── state_circular_atanh_VAR.rds
+│   ├── state_obs_circular_VAR.rds
+│   └── state_obs_circular_atanh_VAR.rds 
 ├── script
 │   ├── PN_MLE.R (Rsolnp package による実装, 実行不可)
 │   ├── VAR.R (Vector auto regressive関数, 自作関数を作成する参考になるかも)
@@ -58,11 +64,14 @@ We introduce a new approach to a circular time series modeling that based on the
 └── stan
     ├── circularVAR_p_.stan (VAR(p) model, 全てのパラメータの事前分布を正規分布とする. constに関するパラメータの事前分布をN(0,10), Simgaに関するパラメータの事前分布を小さく設定する)
     ├── circularVAR_p_penalty.stan (平均ベクトルが, 単位円周上付近に存在するとして罰則項を与える)
-    ├── circularVAR_p_noconst.stan (const vectorを c(0,0)とする, どんな違いがあるのか調べる) 
     ├── circularVAR_p_sigma_I.stan (det(Sigma)=1として, 制約を置く, その他のパラメータは大きめの正規分布にしてみる) 
+    ├── circular_AR.stan (AR model 角度データだけでなく, 実空間上の値にも適用可能) 
+    ├── circular_AR_.stan (アヒル本を参考に, 予測曲線を描く式も導入)
     ├── observation_circular_VAR.stan
     ├── state_circular_VAR.stan
-    ├── state_obs_circular_VAR.stan 
-    └── test.stan (stan codeをR内で使用する際に, 関数式として使用) 
+    ├── state_circular_atanh_VAR.stan
+    ├── state_obs_circular_VAR.stan
+    ├── state_obs_circular_atanh_VAR.stan
+    └── test.stan  (stan codeをR内で使用する際に, 関数式として使用)    
 ```
 
