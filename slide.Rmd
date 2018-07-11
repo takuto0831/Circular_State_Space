@@ -1,6 +1,6 @@
 ---
-title: "How to predict the wind direction"
-subtitle: "TokyoR"
+title: "How to predict the wind direction of tomorrow"
+subtitle: "Tokyo.R #71"
 date: "15 July 2018"
 author: "Takuto Kotsubo"
 output:
@@ -8,16 +8,18 @@ output:
     reveal_option:
       slideNumber: true
       center: true
-    theme: sky
+      font-family: 'Helvetica'
+    theme: serif
+    css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css
 editor_options: 
   chunk_output_type: console
-font-family: 'Helvetica'
 ---
 
 ```{r knitr_init, echo=FALSE, cache=FALSE}
 ## Global options
 #options(max.print="500")
-knitr:::opts_chunk$set(cache=FALSE,
+rm(list = ls())
+knitr:::opts_chunk$set(cache=TRUE,
                prompt=FALSE,
                tidy=TRUE,
                comment=NA,
@@ -26,26 +28,133 @@ knitr:::opts_chunk$set(cache=FALSE,
 knitr:::opts_knit$set(width=75)
 ```
 
+```{r include=FALSE}
+# set package
+library(revealjs)
+library(dplyr)
+library(tidyverse)
+library(tibble)
+library(lubridate)
+library(circular)
+library(readr)
+library(ggthemes)
+library(ggforce)
+library(MASS)
+library(rstan)
+library(MCMCpack)
+library(loo)
+library(ggmcmc)
+library(tseries)
+```
+
+```{r include=FALSE}
+# set ggplot theme
+theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
+```
+
+# Table of content
+
 ## Table of content
 
-- Self-Introduction
-- Introduction of Circular Package
-- Introduction of Auto Regressive model
-- Can I apply the Auto Regressive model to the Circular data
-- Build a Auto Regressive model based on the Circular data
+- My profile
 
-## Self-Introduction
+- Introduction of Circular Package and Circular statistics
 
+- Introduction of Autoregressive model (AR model)
+
+- Apply the Autoregressive model to the Circular data 
+
+- Build a Autoregressive model based on the Circular data
+
+- Analysis for wind direction data
+
+# My profile
+
+## My profile
+
+<div class="column1">
 - Name: Takuto Kotsubo
-- Twitter: airspace_nobo
+
 - Affiliation: Graduate School of Engineering, Tokyo University of Science
+
 - Major: Time series analysis
+
 - Hobby: Shogi, Bouldering
+</div>
 
-# Introduction of Circular Package
+<div class="column2">
+```{r, echo=FALSE, out.width = '80%'}
+knitr::include_graphics("data/bouldering.png")
+```
+</div>
 
-# Introduction of Auto Regressive model (AR model)
+# Introduction of Circular Package and Circular statistics
 
-# Can I apply the AR model to the Circular data 
+# Introduction of Autoegressive model (AR model)
+
+## Autoregressive process 
+
+- Autoregressive process means that the current data is represented by past data, AR($p$) model can be written as
+
+$$y_t = c + \sum_{i=1}^p \phi_i y_{t-i} + \varepsilon_t,~~ \varepsilon_t \sim \mathcal{N}(0,~\sigma^2).$$
+- Joint probability distribution can be written as follows, using value before the time point $p$
+
+$$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_t f(y_t|y_{t-1}, ...,y_{t-p},c, \phi_i, \varepsilon). $$
+
+## Parameter estimation
+
+- From the time point $t-1$, the value at the time point $t$ as follows, 
+
+$$ y_t|y_{t-1} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\sigma^2). $$
+- Maxtimize the sum of log likelihoods at each time point
+
+## Data set
+
+- The luteinzing hormone in blood (`lh` data set)
+- 10 minutes interbals, 48 samples
+
+```{r fig.height=4}
+data(lh)
+data.frame(lh) %>% 
+    mutate(index = row_number()) %>%
+    ggplot(aes(x=index,y=lh)) +
+    geom_line()
+```
+
+## 
+
+まだ動かないよ
+
+```{r,eval=FALSE}
+ms <- rstan::extract(fit)
+ms <- mutate(wind_data,theta_new = c(NA,ms$theta_new %>% apply(2,mean)))
+
+ggplot(data=ms,aes(x=t)) +
+  geom_line(aes(y=theta_real),colour = "red") +
+  geom_line(aes(y=theta_new))
+
+
+ts.plot(lh)
+fit1 <- sampling(ar2_model,data = list(N=length(lh),P=1,theta=lh), iter=1000, chains=1)
+fit2 <- sampling(ar2_model,data = list(N=length(lh),P=2,theta=lh), iter=1000, chains=1)
+fit3 <- sampling(ar2_model,data = list(N=length(lh),P=3,theta=lh), iter=1000, chains=1)
+fit4 <- sampling(ar2_model,data = list(N=length(lh),P=4,theta=lh), iter=1000, chains=1)
+fit5 <- sampling(ar2_model,data = list(N=length(lh),P=5,theta=lh), iter=1000, chains=1)
+
+ms <- rstan::extract(fit3)
+ms <- as.ts(c(NA,ms$theta_new %>% apply(2,mean)))
+ts.plot(lh,ms,col=c(1,2))
+pred_value(fit = fit3,p = 3,dat=as.vector(lh),who = 1)
+
+extract_log_lik(fit1,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit2,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit3,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit4,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit5,"log_likelihood") %>% loo::waic() # VAR(5) model
+```
+
+# Apply the Auto Regressive model to the Circular data 
 
 # Build a Auto Regressive model based on the Circular data
+
+# Analysis for wind direction data
