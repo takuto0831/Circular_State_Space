@@ -10,7 +10,8 @@ output:
       center: true
       font-family: 'Helvetica'
     theme: serif
-    css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css
+    #css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
+    css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
 editor_options: 
   chunk_output_type: console
 ---
@@ -75,6 +76,8 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 <div class="column1">
 - Name: Takuto Kotsubo
 
+- Twitter: [airspace_nobo](https://www.inosho.info/濃菜麺-井の庄/)
+
 - Affiliation: Graduate School of Engineering, Tokyo University of Science
 
 - Major: Time series analysis
@@ -83,12 +86,75 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 </div>
 
 <div class="column2">
-```{r, echo=FALSE, out.width = '80%'}
+```{r, echo=FALSE, out.width = '75%'}
+knitr::include_graphics("data/ramen.png")
 knitr::include_graphics("data/bouldering.png")
 ```
 </div>
 
 # Introduction of Circular Package and Circular statistics
+
+## Circular Statistics
+
+## Circular plot
+
+```{r fig.height=4}
+x <- circular(data.frame(runif(100,0,pi/2))) 
+par(mfcol = c(1,3))
+plot(x,main = "Circular plot")
+rose.diag(x,main = "rose diagrame")
+hist(x %>% as.vector(), main = "Histogram",xlab=expression(theta))
+```
+
+## Circular mean direction
+
+<div class="column3">
+
+- We consider the average of the two radians $\pi/3$ and $\pi/5$ (black line)
+- Arithmetic average is red line, circular mean direction is blue line
+
+```{r fig.height=5, echo=FALSE}
+y <- c(pi/3,pi*5/3)
+plot(circular(y),shrink = 1,main="Circular mean direction")
+arrows.circular(circular(y))
+arrows.circular(circular(0),col=4,cex=100,lty=5)
+arrows.circular(circular(pi),col=2,cex=100,lty=5)
+```
+</div>
+
+<div class="column4">
+```{r}
+mean(y) 
+mean.circular(y) 
+```
+</div>
+
+## Circular Standard Deviation
+
+- 分散はどのように計算式違うの??
+
+```{r}
+x <- runif(100,0,pi/2)
+sd(x)
+sd.circular(circular(x))
+```
+
+## Circular MSE
+
+we consider circular rotation, for example 
+
+
+## Circular test
+
+```{r}
+rayleigh.test(x) # 角度データに偏りがあるか
+kuiper.test(x) # Whether Circular data follows von Mises distribution
+watson.wheeler.test(list(x,x)) # ??
+```
+
+## Circular-Linear Regresseion
+
+## Circular-Circular Regresseion
 
 # Introduction of Autoegressive model (AR model)
 
@@ -97,7 +163,8 @@ knitr::include_graphics("data/bouldering.png")
 - Autoregressive process means that the current data is represented by past data, AR($p$) model can be written as
 
 $$y_t = c + \sum_{i=1}^p \phi_i y_{t-i} + \varepsilon_t,~~ \varepsilon_t \sim \mathcal{N}(0,~\sigma^2).$$
-- Joint probability distribution can be written as follows, using value before the time point $p$
+
+- Joint probability distribution can be written as follows, using value before the time point $t$
 
 $$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_t f(y_t|y_{t-1}, ...,y_{t-p},c, \phi_i, \varepsilon). $$
 
@@ -105,20 +172,41 @@ $$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_t f(y_t|y_{t-1}, ...,y_{t-p},c
 
 - From the time point $t-1$, the value at the time point $t$ as follows, 
 
-$$ y_t|y_{t-1} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\sigma^2). $$
+$$ y_t|y_{t-1},...,y_{t-p} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\sigma^2). $$
+
 - Maxtimize the sum of log likelihoods at each time point
 
-## Data set
+## Sample data set
 
 - The luteinzing hormone in blood (`lh` data set)
 - 10 minutes interbals, 48 samples
 
-```{r fig.height=4}
-data(lh)
+```{r include=FALSE}
+data(lh) # data import
+```
+
+```{r fig.height=3.5}
 data.frame(lh) %>% 
     mutate(index = row_number()) %>%
     ggplot(aes(x=index,y=lh)) +
     geom_line()
+```
+
+## table sample
+
+- we calculate WAIC and RMSE
+
+```{r echo=FALSE}
+library(DT)
+DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
+                         RMSE = c(1,2,3,4,5,6,7,8,9,0)),
+              rownames = TRUE,
+              colnames = c('p'=1),
+              filter = "none",
+              escape = TRUE,
+              extensions = 'Scroller',
+              options=list(pageLength=5,deferRender = TRUE,
+                           dom = "frtiS",scrollY = 200,scrollCollapse = TRUE)) 
 ```
 
 ## 
