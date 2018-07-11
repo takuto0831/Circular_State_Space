@@ -9,3 +9,29 @@
   float: right;
   width: 48%;
 }
+
+.reveal .slides section .column3 {
+  float: left;
+  width: 68%;
+}
+.reveal .slides section .column4 {
+  float: right;
+  width: 28%;
+}
+
+.reveal table {
+  margin: auto;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.reveal table th {
+  font-weight: bold;
+}
+
+.reveal table th,
+.reveal table td {
+  text-align: left;
+  padding: 0.2em 0.5em 0.2em 0.5em;
+  border-bottom: 1px solid;
+}
