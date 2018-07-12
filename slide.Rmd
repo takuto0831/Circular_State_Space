@@ -11,7 +11,7 @@ output:
       font-family: 'Helvetica'
     theme: serif
     css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
-    #css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
+    # css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
 editor_options: 
   chunk_output_type: console
 ---
@@ -102,7 +102,15 @@ knitr::include_graphics("data/bouldering.png")
 
 ## Circular Statistics
 
+- Circular or directional data refers to data recorded as points which directions are measured and arises in biology, geography, medicine, astronomy, and many other areas.
+ 
+- The usual summary statistics, such as the sample mean and standard deviation, cannot be used with angular values.
+
+- The average of the angular values $1$ and $359$ is $0$ not $\pi$.
+
 ## Circular plot
+
+- We use `circular` package
 
 ```{r fig.height=4}
 x <- circular(data.frame(runif(100,0,pi/2))) 
@@ -145,10 +153,21 @@ sd(x)
 sd.circular(circular(x))
 ```
 
-## Circular MSE
+## Circular RMSE
 
-we consider circular rotation, for example 
+- RMSE is a measure of the differences between observed values ($\theta_t$) and predicted values ($\hat{\theta_t}$) by the model,
 
+$$\textrm{RMSE} = \sqrt{\frac{1}{n-p} \sum_{t=1+p}^n (\theta^{dif}_t)^2}, $$
+
+- where $\theta^{dif}_t$ consider the circular rotations, 
+
+$$ 
+\theta^{dif}_t = \begin{cases}
+		\theta_t - \hat{\theta_t} + 2 \pi & (\theta_t - \hat{\theta_t}< - \pi) \\
+		\theta_t - \hat{\theta_t} & (- \pi \leq \theta_t - \hat{\theta_t}\leq \pi) \\		
+		\theta_t - \hat{\theta_t}- 2 \pi & (\theta_t - \hat{\theta_t}> \pi) 
+	\end{cases}. 
+$$
 
 ## Circular test
 
@@ -325,6 +344,22 @@ data_frame(p = c(1,2,3,4,5,6,7),
 
 # Apply the Auto Regressive model to the Circular data 
 
+## Circular data
+
+```{r echo=FALSE}
+data(wind) 
+wind_data <- wind %>%  
+  data.frame(t = seq(1,310,1), tmp=.) %>% # put label
+  mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
+  dplyr::select(-tmp) %>% 
+  mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))
+
+wind_data %>% 
+  ggplot(aes(theta_real)) +
+  geom_histogram(binwidth = 0.2, colour = "black", fill = "grey") + 
+  labs(x="Wind directions in dadians")
+```
+
 # Build a Auto Regressive model based on the Circular data
 
 # Analysis for wind direction data
@@ -345,3 +380,27 @@ DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
               options=list(pageLength=5,deferRender = TRUE,
                            dom = "frtiS",scrollY = 200,scrollCollapse = TRUE)) 
 ```
+
+# Appendix
+
+## Model Selection Criteria (WAIC)
+
+- WAIC can be viewed as an improvement on the DIC for Bayesian models. WAIC can be interpreted as a computationally convenient approximation to cross-validation and is defined as
+
+```{r, echo=FALSE, out.width = '75%'}
+knitr::include_graphics("data/WAIC.eps")
+```
+
+where $n$ is the number of data $\theta$, $S$ is MCMC sampling number of each parameter, $\eta^{m, S}$ is the $S$-th parameter set of the $m$-th chain.
+
+
+
+
+
+
+
+
+
+
+
+
