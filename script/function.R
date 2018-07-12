@@ -180,19 +180,21 @@ ans_stan_p2 <- function(fit,P,data){
   return(data.frame(predict= c(rep(NA,P),theta.mom)))
 }
 # output predict value for VAR
-pred_value <- function(fit,p,dat,who=2){
-  # who:1 -> AR model, who:2 -> VAR model
+pred_value <- function(fit,p,dat,who=2,dif = TRUE){
+  # who:1 -> AR model, who:2 -> VAR model, dif = 1 -> output RMSE value
   if(who == 1){pred <- ans_stan_p2(fit, P=p, data=dat)} # ar model
   else{pred <- ans_stan_p(fit, P=p, data=dat)} # var model
   # model のRMSE 算出するコード
-  data.frame(real=dat,pred) %>% 
-    mutate(dif = predict - real) %>% 
-    mutate(dif_ = dplyr::if_else(dif < -pi, dif + 2*pi,
-                                 dplyr::if_else(dif > pi, dif - 2*pi, dif))) %>% # 誤差は必ず -pi ~ pi に含まれる
-    mutate(eps = dif_^2) %>% 
-    summarise(ans = sqrt(mean(eps,na.rm = TRUE))) %>% 
-    {paste("RMSE of", fit@model_name, "model.",sprintf("lag = %d, RMSE  = %f",p,.),sep = " ")} %>% 
-    print() # Root Mean Square Error
+  if(dif == TRUE){
+    data.frame(real=dat,pred) %>% 
+      mutate(dif = predict - real) %>% 
+      mutate(dif_ = dplyr::if_else(dif < -pi, dif + 2*pi,
+                                   dplyr::if_else(dif > pi, dif - 2*pi, dif))) %>% # 誤差は必ず -pi ~ pi に含まれる
+      mutate(eps = dif_^2) %>% 
+      summarise(ans = sqrt(mean(eps,na.rm = TRUE))) %>% 
+      {paste("RMSE of", fit@model_name, "model.",sprintf("lag = %d, RMSE  = %f",p,.),sep = " ")} %>% 
+     print() # Root Mean Square Error
+  }
   # 予測値, 真値, 信用区間を表示する
   data.frame(real=dat,pred) %>% 
     mutate(index = row_number()) %>%
