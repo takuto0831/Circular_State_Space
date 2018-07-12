@@ -22,7 +22,8 @@ model{
     for(k in 1:P){
       pre_theta[k] = theta[n-k];
     }
-    target += normal_lpdf(theta[n]|alpha_0 + ( alpha_1 * pre_theta),sigma);
+    target += 
+      normal_lpdf(theta[n]|alpha_0 + ( alpha_1 * pre_theta),sigma);
   }
 }
 
