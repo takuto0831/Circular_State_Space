@@ -177,9 +177,9 @@ $$ y_t|y_{t-1},...,y_{t-p} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\si
 
 - Maxtimize the sum of log likelihoods at each time point
 
-## Parameter estimation method by MCMC
+## Parameter estimation method
 
-- Rstan code (AR($p$) model)
+- MCMC, Rstan code (AR($p$) model)
 
 ```
 data{
