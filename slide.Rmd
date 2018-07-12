@@ -370,20 +370,6 @@ wind_data %>%
   labs(x="Wind directions in dadians")
 ```
 
-```{r include=FALSE}
-# stan paramter set
-d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
-d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
-d.dat3 <- list(N=length(wind_data$theta_real),P=3,theta=wind_data$theta_real) # for VAR(3)
-d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # for VAR(4)
-d.dat5 <- list(N=length(wind_data$theta_real),P=5,theta=wind_data$theta_real) # for VAR(5)
-d.dat6 <- list(N=length(wind_data$theta_real),P=6,theta=wind_data$theta_real) # for VAR(6)
-d.dat7 <- list(N=length(wind_data$theta_real),P=7,theta=wind_data$theta_real) # for VAR(7)
-d.dat8 <- list(N=length(wind_data$theta_real),P=8,theta=wind_data$theta_real) # for VAR(8)
-d.dat9 <- list(N=length(wind_data$theta_real),P=9,theta=wind_data$theta_real) # for VAR(9)
-d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) # for VAR(10)
-```
-
 ## Apply the Autoregressive model
 
 ```{r eval=FALSE,echo=FALSE}
@@ -494,6 +480,19 @@ wind_data %>%
   labs(x="Wind directions in dadians")
 ```
 
+```{r include=FALSE}
+# stan paramter set
+d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
+d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
+d.dat3 <- list(N=length(wind_data$theta_real),P=3,theta=wind_data$theta_real) # for VAR(3)
+d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # for VAR(4)
+d.dat5 <- list(N=length(wind_data$theta_real),P=5,theta=wind_data$theta_real) # for VAR(5)
+d.dat6 <- list(N=length(wind_data$theta_real),P=6,theta=wind_data$theta_real) # for VAR(6)
+d.dat7 <- list(N=length(wind_data$theta_real),P=7,theta=wind_data$theta_real) # for VAR(7)
+d.dat8 <- list(N=length(wind_data$theta_real),P=8,theta=wind_data$theta_real) # for VAR(8)
+d.dat9 <- list(N=length(wind_data$theta_real),P=9,theta=wind_data$theta_real) # for VAR(9)
+d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) # for VAR(10)
+```
 ## Autocorrelation of Markov Chains
 
 ```{r include=FALSE}
