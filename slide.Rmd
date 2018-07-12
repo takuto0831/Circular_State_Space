@@ -48,8 +48,9 @@ library(ggmcmc)
 library(tseries)
 ```
 
-```{r include=FALSE}
+```{r echo=FALSE, cache=FALSE}
 # set ggplot theme
+library(ggplot2)
 theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 ```
 
@@ -168,13 +169,55 @@ $$y_t = c + \sum_{i=1}^p \phi_i y_{t-i} + \varepsilon_t,~~ \varepsilon_t \sim \m
 
 $$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_t f(y_t|y_{t-1}, ...,y_{t-p},c, \phi_i, \varepsilon). $$
 
-## Parameter estimation
+## Maximize log likelihood method
 
 - From the time point $t-1$, the value at the time point $t$ as follows, 
 
 $$ y_t|y_{t-1},...,y_{t-p} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\sigma^2). $$
 
 - Maxtimize the sum of log likelihoods at each time point
+
+## Parameter estimation method by MCMC
+
+- Rstan code (AR($p$) model)
+
+```
+data{
+  int N; // data size
+  int P; // AR(P) 
+  vector[N] theta; // data set
+}
+parameters{
+  real alpha_0; // const parameter
+  row_vector[P] alpha_1; // coef parameter
+  real<lower=0> sigma; // Variance 
+}
+model{
+  alpha_0 ~ normal(0,100); sigma ~ normal(0,100);
+  for(i in 1:P){
+    alpha_1[i] ~ normal(0,100); // N(0,100)
+  }
+  for(n in (1+P):N){
+    vector[P] pre_theta; 
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    target += 
+      normal_lpdf(theta[n]|alpha_0 + ( alpha_1 * pre_theta),sigma);
+  }
+}
+generated quantities{
+  vector[N-P] log_likelihood;
+  for(n in (1+P):N){
+    vector[P] pre_theta;
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    log_likelihood[n-P] = 
+      normal_lpdf(theta[n]|alpha_0 + ( alpha_1 * pre_theta),sigma);
+  } 
+}
+```
 
 ## Sample data set
 
@@ -192,37 +235,11 @@ data.frame(lh) %>%
     geom_line()
 ```
 
-## table sample
-
-- we calculate WAIC and RMSE
-
-```{r echo=FALSE}
-library(DT)
-DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
-                         RMSE = c(1,2,3,4,5,6,7,8,9,0)),
-              rownames = TRUE,
-              colnames = c('p'=1),
-              filter = "none",
-              escape = TRUE,
-              extensions = 'Scroller',
-              options=list(pageLength=5,deferRender = TRUE,
-                           dom = "frtiS",scrollY = 200,scrollCollapse = TRUE)) 
-```
-
-## 
+## Estimate AR($p$) model parameters
 
 まだ動かないよ
 
 ```{r,eval=FALSE}
-ms <- rstan::extract(fit)
-ms <- mutate(wind_data,theta_new = c(NA,ms$theta_new %>% apply(2,mean)))
-
-ggplot(data=ms,aes(x=t)) +
-  geom_line(aes(y=theta_real),colour = "red") +
-  geom_line(aes(y=theta_new))
-
-
-ts.plot(lh)
 fit1 <- sampling(ar2_model,data = list(N=length(lh),P=1,theta=lh), iter=1000, chains=1)
 fit2 <- sampling(ar2_model,data = list(N=length(lh),P=2,theta=lh), iter=1000, chains=1)
 fit3 <- sampling(ar2_model,data = list(N=length(lh),P=3,theta=lh), iter=1000, chains=1)
@@ -246,3 +263,21 @@ extract_log_lik(fit5,"log_likelihood") %>% loo::waic() # VAR(5) model
 # Build a Auto Regressive model based on the Circular data
 
 # Analysis for wind direction data
+
+
+## table sample
+
+- we calculate WAIC and RMSE
+
+```{r echo=FALSE}
+library(DT)
+DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
+                         RMSE = c(1,2,3,4,5,6,7,8,9,0)),
+              rownames = TRUE,
+              colnames = c('p'=1),
+              filter = "none",
+              escape = FALSE,
+              extensions = 'Scroller',
+              options=list(pageLength=5,deferRender = TRUE,
+                           dom = "frtiS",scrollY = 200,scrollCollapse = TRUE)) 
+```
