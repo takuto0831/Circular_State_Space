@@ -157,9 +157,9 @@ sd.circular(circular(x))
 
 - RMSE is a measure of the differences between observed values ($\theta_t$) and predicted values ($\hat{\theta_t}$) by the model,
 
-$$\textrm{RMSE} = \sqrt{\frac{1}{n-p} \sum_{t=1+p}^n (\theta^{dif}_t)^2}, $$
+$$\textrm{RMSE} = \sqrt{\frac{1}{n} \sum_{t=1}^n (\theta^{dif}_t)^2}, $$
 
-- where $\theta^{dif}_t$ consider the circular rotations, 
+where $\theta^{dif}_t$ consider the circular rotations, 
 
 $$ 
 \theta^{dif}_t = \begin{cases}
@@ -168,6 +168,7 @@ $$
 		\theta_t - \hat{\theta_t}- 2 \pi & (\theta_t - \hat{\theta_t}> \pi) 
 	\end{cases}. 
 $$
+
 
 ## Circular test
 
@@ -203,7 +204,7 @@ $$ y_t|y_{t-1},...,y_{t-p} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\si
 
 ## Parameter estimation method
 
-- MCMC, Rstan code (AR($p$) model)
+- We use MCMC method, and my rstan code (AR($p$) model) as below,
 
 ```
 data{
@@ -260,8 +261,6 @@ data.frame(lh) %>%
 ```
 
 ## Estimate AR($p$) model parameters
-
-- $\hat{R} < 1.01$
 
 ```{r,echo= FALSE,eval=FALSE}
 # fit data 作成コード
@@ -334,6 +333,10 @@ data.frame(real=as.vector(lh),pred) %>%
 </div>
 
 <div class="column4">
+
+- $\hat{R} < 1.01$
+- Rmse 間違っている, (circular 式で計算している)
+
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7),
            WAIC = c(64.6,63.8,63.7,65.2,66.4,65.4,65.4),
@@ -342,11 +345,14 @@ data_frame(p = c(1,2,3,4,5,6,7),
 ```
 </div>
 
-# Apply the Auto Regressive model to the Circular data 
+# Apply the Autoregressive model to the Circular data 
 
-## Circular data
+## Wind Direction in Col de la Roa
 
-```{r echo=FALSE}
+- In a place named "Col de la Roa" in the Italian Alps, It reported the wind direction records every day
+- Total of 310 measures
+
+```{r echo=FALSE,fig.height=4}
 data(wind) 
 wind_data <- wind %>%  
   data.frame(t = seq(1,310,1), tmp=.) %>% # put label
@@ -359,6 +365,107 @@ wind_data %>%
   geom_histogram(binwidth = 0.2, colour = "black", fill = "grey") + 
   labs(x="Wind directions in dadians")
 ```
+
+```{r include=FALSE}
+# para_alpha_1 = 1000, para_alpha_0 = 1000, para_sig = 1000, para_rho = 1000) 
+d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
+d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
+d.dat3 <- list(N=length(wind_data$theta_real),P=3,theta=wind_data$theta_real) # for VAR(3)
+d.dat4 <- list(N=length(wind_data$theta_real),P=4,theta=wind_data$theta_real) # for VAR(4)
+d.dat5 <- list(N=length(wind_data$theta_real),P=5,theta=wind_data$theta_real) # for VAR(5)
+d.dat6 <- list(N=length(wind_data$theta_real),P=6,theta=wind_data$theta_real) # for VAR(6)
+d.dat7 <- list(N=length(wind_data$theta_real),P=7,theta=wind_data$theta_real) # for VAR(7)
+d.dat8 <- list(N=length(wind_data$theta_real),P=8,theta=wind_data$theta_real) # for VAR(8)
+d.dat9 <- list(N=length(wind_data$theta_real),P=9,theta=wind_data$theta_real) # for VAR(9)
+d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) # for VAR(10)
+```
+
+## Apply the Autoregressive model
+
+```{r eval=FALSE,echo=FALSE}
+# read model
+ar_model <- readRDS("model/circular_AR.rds")
+# fiting
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+fit_ar_1 <- sampling(ar_model,data = d.dat1, iter=2000, chains=4)
+fit_ar_2 <- sampling(ar_model,data = d.dat2, iter=2000, chains=4)
+fit_ar_3 <- sampling(ar_model,data = d.dat3, iter=2000, chains=4)
+fit_ar_4 <- sampling(ar_model,data = d.dat4, iter=2000, chains=4)
+fit_ar_5 <- sampling(ar_model,data = d.dat5, iter=2000, chains=4)
+fit_ar_6 <- sampling(ar_model,data = d.dat6, iter=2000, chains=4)
+fit_ar_7 <- sampling(ar_model,data = d.dat7, iter=2000, chains=4)
+#fit_ar_8 <- sampling(ar_model,data = d.dat8, iter=2000, chains=4)
+#fit_ar_9 <- sampling(ar_model,data = d.dat9, iter=2000, chains=4)
+#fit_ar_10 <- sampling(ar_model,data = d.dat10, iter=2000, chains=4)
+
+#### save fit model 
+save(fit_ar_1, file="fit/CircularAR_1.rda")# save fit
+save(fit_ar_2, file="fit/CircularAR_2.rda")# save fit
+save(fit_ar_3, file="fit/CircularAR_3.rda")# save fit
+save(fit_ar_4, file="fit/CircularAR_4.rda")# save fit
+save(fit_ar_5, file="fit/CircularAR_5.rda")# save fit
+save(fit_ar_6, file="fit/CircularAR_6.rda")# save fit
+save(fit_ar_7, file="fit/CircularAR_7.rda")# save fit
+#save(fit_ar_8, file="fit/CircularAR_8.rda")# save fit
+#save(fit_ar_9, file="fit/CircularAR_9.rda")# save fit
+#save(fit_ar_10, file="fit/CircularAR_10.rda")# save fit
+
+### load fit ###
+load("fit/CircularAR_1.rda", verbose = TRUE) 
+load("fit/CircularAR_2.rda", verbose = TRUE) 
+load("fit/CircularAR_3.rda", verbose = TRUE) 
+load("fit/CircularAR_4.rda", verbose = TRUE) 
+load("fit/CircularAR_5.rda", verbose = TRUE) 
+load("fit/CircularAR_6.rda", verbose = TRUE) 
+load("fit/CircularAR_7.rda", verbose = TRUE) 
+#load("fit/CircularAR_8.rda", verbose = TRUE) 
+#load("fit/CircularAR_9.rda", verbose = TRUE) 
+#load("fit/CircularAR_10.rda", verbose = TRUE) 
+
+### WAIC ####
+extract_log_lik(fit_ar_1,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit_ar_2,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit_ar_3,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit_ar_4,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit_ar_5,"log_likelihood") %>% loo::waic() # VAR(5) model
+extract_log_lik(fit_ar_6,"log_likelihood") %>% loo::waic() # VAR(6) model
+extract_log_lik(fit_ar_7,"log_likelihood") %>% loo::waic() # VAR(7) model
+
+### RMSE and plot ### 
+pred_value(fit = fit_ar_1,p = 1,dat=wind_data$theta_real,who=1)
+pred_value(fit = fit_ar_2,p = 2,dat=wind_data$theta_real,who=1)
+pred_value(fit = fit_ar_3,p = 3,dat=wind_data$theta_real,who=1)
+pred_value(fit = fit_ar_4,p = 4,dat=wind_data$theta_real,who=1)
+pred_value(fit = fit_ar_5,p = 5,dat=wind_data$theta_real,who=1)
+pred_value(fit = fit_ar_6,p = 6,dat=wind_data$theta_real,who=1)
+pred_value(fit = fit_ar_7,p = 7,dat=wind_data$theta_real,who=1)
+```
+
+<div class="column3">
+```{r include=FALSE}
+load("fit/CircularAR_2.rda", verbose = TRUE) # load fit
+```
+
+```{r echo=FALSE}
+pred_value(fit = fit_ar_2,p = 2,dat=wind_data$theta_real,who = 1,dif = FALSE)
+```
+
+- not fitting...
+
+</div>
+
+<div class="column4">
+
+- $\hat{R} < 1.01$
+
+```{r echo=FALSE}
+data_frame(p = c(1,2,3,4,5,6,7),
+           WAIC = c(890.1,888.2,888.8, 890.1,888.2,889.8,885.2),
+           RMSE = c(0.993,0.987,0.989,0.989,0.984,0.980,0.979)) %>% 
+  formattable::formattable()
+```
+</div>
 
 # Build a Auto Regressive model based on the Circular data
 
@@ -387,7 +494,7 @@ DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
 
 - WAIC can be viewed as an improvement on the DIC for Bayesian models. WAIC can be interpreted as a computationally convenient approximation to cross-validation and is defined as
 
-```{r, echo=FALSE, out.width = '75%'}
+```{r, echo=FALSE, out.width = '90%'}
 knitr::include_graphics("data/WAIC.eps")
 ```
 
