@@ -10,8 +10,8 @@ output:
       center: true
       font-family: 'Helvetica'
     theme: serif
-    #css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
-    css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
+    css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
+    #css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
 editor_options: 
   chunk_output_type: console
 ---
@@ -46,6 +46,11 @@ library(MCMCpack)
 library(loo)
 library(ggmcmc)
 library(tseries)
+library(DT)
+library(formattable)
+
+# load function
+source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
 ```
 
 ```{r echo=FALSE, cache=FALSE}
@@ -237,26 +242,86 @@ data.frame(lh) %>%
 
 ## Estimate AR($p$) model parameters
 
-まだ動かないよ
+- $\hat{R} < 1.01$
 
-```{r,eval=FALSE}
-fit1 <- sampling(ar2_model,data = list(N=length(lh),P=1,theta=lh), iter=1000, chains=1)
-fit2 <- sampling(ar2_model,data = list(N=length(lh),P=2,theta=lh), iter=1000, chains=1)
-fit3 <- sampling(ar2_model,data = list(N=length(lh),P=3,theta=lh), iter=1000, chains=1)
-fit4 <- sampling(ar2_model,data = list(N=length(lh),P=4,theta=lh), iter=1000, chains=1)
-fit5 <- sampling(ar2_model,data = list(N=length(lh),P=5,theta=lh), iter=1000, chains=1)
+```{r,echo= FALSE,eval=FALSE}
+# fit data 作成コード
+ar2_model <- readRDS("model/circular_AR2.rds") 
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+fit1 <- sampling(ar2_model,data = list(N=length(lh),P=1,theta=lh), iter=2000, chains=4)
+fit2 <- sampling(ar2_model,data = list(N=length(lh),P=2,theta=lh), iter=2000, chains=4)
+fit3 <- sampling(ar2_model,data = list(N=length(lh),P=3,theta=lh), iter=2000, chains=4)
+fit4 <- sampling(ar2_model,data = list(N=length(lh),P=4,theta=lh), iter=2000, chains=4)
+fit5 <- sampling(ar2_model,data = list(N=length(lh),P=5,theta=lh), iter=2000, chains=4)
+fit6 <- sampling(ar2_model,data = list(N=length(lh),P=6,theta=lh), iter=2000, chains=4)
+fit7 <- sampling(ar2_model,data = list(N=length(lh),P=7,theta=lh), iter=2000, chains=4)
 
-ms <- rstan::extract(fit3)
-ms <- as.ts(c(NA,ms$theta_new %>% apply(2,mean)))
-ts.plot(lh,ms,col=c(1,2))
-pred_value(fit = fit3,p = 3,dat=as.vector(lh),who = 1)
+#### save fit model 
+save(fit1, file="fit/AR_1.rda")# save fit
+save(fit2, file="fit/AR_2.rda")# save fit
+save(fit3, file="fit/AR_3.rda")# save fit
+save(fit4, file="fit/AR_4.rda")# save fit
+save(fit5, file="fit/AR_5.rda")# save fit
+save(fit6, file="fit/AR_6.rda")# save fit
+save(fit7, file="fit/AR_7.rda")# save fit
 
+### load fit ###
+load("fit/AR_1.rda", verbose = TRUE) 
+load("fit/AR_2.rda", verbose = TRUE) 
+load("fit/AR_3.rda", verbose = TRUE) 
+load("fit/AR_4.rda", verbose = TRUE) 
+load("fit/AR_5.rda", verbose = TRUE) 
+load("fit/AR_6.rda", verbose = TRUE) 
+load("fit/AR_7.rda", verbose = TRUE) 
+
+### WAIC ####
 extract_log_lik(fit1,"log_likelihood") %>% loo::waic() # VAR(1) model
 extract_log_lik(fit2,"log_likelihood") %>% loo::waic() # VAR(2) model
 extract_log_lik(fit3,"log_likelihood") %>% loo::waic() # VAR(3) model
 extract_log_lik(fit4,"log_likelihood") %>% loo::waic() # VAR(4) model
 extract_log_lik(fit5,"log_likelihood") %>% loo::waic() # VAR(5) model
+extract_log_lik(fit6,"log_likelihood") %>% loo::waic() # VAR(6) model
+extract_log_lik(fit7,"log_likelihood") %>% loo::waic() # VAR(7) model
+
+### RMSE and plot ### 
+pred_value(fit = fit1,p = 1,dat=as.vector(lh),who = 1)
+pred_value(fit = fit2,p = 2,dat=as.vector(lh),who = 1)
+pred_value(fit = fit3,p = 3,dat=as.vector(lh),who = 1)
+pred_value(fit = fit4,p = 4,dat=as.vector(lh),who = 1)
+pred_value(fit = fit5,p = 5,dat=as.vector(lh),who = 1)
+pred_value(fit = fit6,p = 6,dat=as.vector(lh),who = 1)
+pred_value(fit = fit7,p = 7,dat=as.vector(lh),who = 1)
 ```
+
+<div class="column3">
+```{r include=FALSE}
+load("fit/AR_3.rda", verbose = TRUE) # load fit
+```
+
+```{r echo=FALSE}
+pred <- ans_stan_p2(fit3, P=3, data=as.vector(lh))
+data.frame(real=as.vector(lh),pred) %>% 
+    mutate(index = row_number()) %>%
+    ggplot(aes(x=index)) +
+    # geom_ribbon(aes(ymin=lower,ymax=upper),fill="skyblue",alpha=0.6) +
+    geom_line(aes(y=real, colour= "real")) + 
+    geom_line(aes(y=predict, colour= "predict")) +
+    scale_colour_manual("",
+                        values = c("real"="black","predict"="blue")
+    ) +
+    labs(y=expression(theta))
+```
+</div>
+
+<div class="column4">
+```{r echo=FALSE}
+data_frame(p = c(1,2,3,4,5,6,7),
+           WAIC = c(64.6,63.8,63.7,65.2,66.4,65.4,65.4),
+           RMSE = c(0.449,0.449,0.442,0.438,0.441,0.430,0.425)) %>% 
+  formattable::formattable()
+```
+</div>
 
 # Apply the Auto Regressive model to the Circular data 
 
@@ -270,7 +335,6 @@ extract_log_lik(fit5,"log_likelihood") %>% loo::waic() # VAR(5) model
 - we calculate WAIC and RMSE
 
 ```{r echo=FALSE}
-library(DT)
 DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
                          RMSE = c(1,2,3,4,5,6,7,8,9,0)),
               rownames = TRUE,
