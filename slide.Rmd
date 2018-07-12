@@ -51,6 +51,10 @@ library(formattable)
 
 # load function
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
+.myfunc.env = new.env() # 関数をグローバル変数に表示しない
+sys.source('~/Desktop/circular_reg/script/stan_plot_label_helper.R', envir = .myfunc.env) # stan_ac_labelに必要
+sys.source('~/Desktop/circular_reg/script/misc.R', envir = .myfunc.env) # stan_ac_labelに必要
+attach( .myfunc.env )
 ```
 
 ```{r echo=FALSE, cache=FALSE}
@@ -367,7 +371,7 @@ wind_data %>%
 ```
 
 ```{r include=FALSE}
-# para_alpha_1 = 1000, para_alpha_0 = 1000, para_sig = 1000, para_rho = 1000) 
+# stan paramter set
 d.dat1 <- list(N=length(wind_data$theta_real),P=1,theta=wind_data$theta_real) # for VAR(1)
 d.dat2 <- list(N=length(wind_data$theta_real),P=2,theta=wind_data$theta_real) # for VAR(2)
 d.dat3 <- list(N=length(wind_data$theta_real),P=3,theta=wind_data$theta_real) # for VAR(3)
@@ -471,6 +475,155 @@ data_frame(p = c(1,2,3,4,5,6,7),
 
 # Analysis for wind direction data
 
+## Wind Direction in Col de la Roa
+
+- In a place named "Col de la Roa" in the Italian Alps, It reported the wind direction records every day
+- Total of 310 measures
+
+```{r echo=FALSE,fig.height=4}
+data(wind) 
+wind_data <- wind %>%  
+  data.frame(t = seq(1,310,1), tmp=.) %>% # put label
+  mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
+  dplyr::select(-tmp) %>% 
+  mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))
+
+wind_data %>% 
+  ggplot(aes(theta_real)) +
+  geom_histogram(binwidth = 0.2, colour = "black", fill = "grey") + 
+  labs(x="Wind directions in dadians")
+```
+
+## Autocorrelation of Markov Chains
+
+```{r include=FALSE}
+load("fit/CircularVAR_2.rda", verbose = TRUE) # load fit
+```
+
+```{r echo=FALSE}
+stan_plot(fit1_4,fill_color ="blue",point_est ="median",show_density=T, pars = c("alpha_0","alpha_1","sigma[1,1]","sigma[1,2]","sigma[2,2]"), 
+          ci_level = 0.95, outer_level=1.00, show_outer_line =T) + 
+          scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]),
+                                            expression(beta[paste("c,",1,",",2)]),expression(beta[paste("s,",1,",",1)]),expression(beta[paste("s,",1,",",2)]),
+                                            expression(Sigma[paste(1,",",1)]),expression(Sigma[paste(1,",",2)]),
+                                            expression(Sigma[paste(2,",",2)]))), breaks = 1:9)
+```
+
+## Posterior Distributions
+
+```{r echo=FALSE}
+pars = c("alpha_0","alpha_1","sigma[1,1]","sigma[1,2]","sigma[2,2]")
+label_set = list("alpha_0[1]" = expression(alpha[paste("c,",0)]), "alpha_0[2]" = expression(alpha[paste("s,",0)]),
+                 "alpha_1[1,1]" = expression(beta[paste("c,",1,",",1)]), "alpha_1[1,2]" = expression(beta[paste("c,",1,",",2)]),
+                 "alpha_1[2,1]" = expression(beta[paste("s,",1,",",1)]), "alpha_1[2,2]" = expression(beta[paste("s,",1,",",2)]),
+                 "sigma[1,1]" = expression(Sigma[paste(1,",",1)]),"sigma[1,2]" = expression(Sigma[paste(1,",",2)]),"sigma[2,2]" = expression(Sigma[paste(2,",",2)]))
+label_func <- function(variable, value) return(label_set[value])
+
+stan_ac_label(object=fit1_4,pars = pars,label_set = label_func)
+```
+
+## Apply the Circular-VAR model
+
+```{r eval=FALSE,echo=FALSE}
+# read model
+state_obs_model <- readRDS("model/state_obs_circular_VAR.rds")
+
+# fiting
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+fit_state_obs_1 <- sampling(state_obs_model,data = d.dat1, iter=5000, chains=4)
+fit_state_obs_2 <- sampling(state_obs_model,data = d.dat2, iter=5000, chains=4)
+fit_state_obs_3 <- sampling(state_obs_model,data = d.dat3, iter=5000, chains=4)
+fit_state_obs_4 <- sampling(state_obs_model,data = d.dat4, iter=5000, chains=4)
+fit_state_obs_5 <- sampling(state_obs_model,data = d.dat5, iter=5000, chains=4)
+fit_state_obs_6 <- sampling(state_obs_model,data = d.dat6, iter=5000, chains=4)
+fit_state_obs_7 <- sampling(state_obs_model,data = d.dat7, iter=5000, chains=4)
+fit_state_obs_8 <- sampling(state_obs_model,data = d.dat8, iter=5000, chains=4)
+fit_state_obs_9 <- sampling(state_obs_model,data = d.dat9, iter=5000, chains=4)
+fit_state_obs_10 <- sampling(state_obs_model,data = d.dat10, iter=5000, chains=4)
+
+#### save fit model 
+save(fit_state_obs_1, file="fit/CircularVAR_1.rda")# save fit
+save(fit_state_obs_2, file="fit/CircularVAR_2.rda")# save fit
+save(fit_state_obs_3, file="fit/CircularVAR_3.rda")# save fit
+save(fit_state_obs_4, file="fit/CircularVAR_4.rda")# save fit
+save(fit_state_obs_5, file="fit/CircularVAR_5.rda")# save fit
+save(fit_state_obs_6, file="fit/CircularVAR_6.rda")# save fit
+save(fit_state_obs_7, file="fit/CircularVAR_7.rda")# save fit
+save(fit_state_obs_8, file="fit/CircularVAR_8.rda")# save fit
+save(fit_state_obs_9, file="fit/CircularVAR_9.rda")# save fit
+save(fit_state_obs_10, file="fit/CircularVAR_10.rda")# save fit
+
+### load fit ###
+load("fit/CircularVAR_1.rda", verbose = TRUE) 
+load("fit/CircularVAR_2.rda", verbose = TRUE) 
+load("fit/CircularVAR_3.rda", verbose = TRUE) 
+load("fit/CircularVAR_4.rda", verbose = TRUE) 
+load("fit/CircularVAR_5.rda", verbose = TRUE) 
+load("fit/CircularVAR_6.rda", verbose = TRUE) 
+load("fit/CircularVAR_7.rda", verbose = TRUE) 
+load("fit/CircularVAR_8.rda", verbose = TRUE) 
+load("fit/CircularVAR_9.rda", verbose = TRUE) 
+load("fit/CircularVAR_10.rda", verbose = TRUE) 
+
+### WAIC ####
+extract_log_lik(fit_state_obs_1,"log_likelihood") %>% loo::waic() # VAR(1) model
+extract_log_lik(fit_state_obs_2,"log_likelihood") %>% loo::waic() # VAR(2) model
+extract_log_lik(fit_state_obs_3,"log_likelihood") %>% loo::waic() # VAR(3) model
+extract_log_lik(fit_state_obs_4,"log_likelihood") %>% loo::waic() # VAR(4) model
+extract_log_lik(fit_state_obs_5,"log_likelihood") %>% loo::waic() # VAR(5) model
+extract_log_lik(fit_state_obs_6,"log_likelihood") %>% loo::waic() # VAR(6) model
+extract_log_lik(fit_state_obs_7,"log_likelihood") %>% loo::waic() # VAR(7) model
+extract_log_lik(fit_state_obs_8,"log_likelihood") %>% loo::waic() # VAR(8) model
+extract_log_lik(fit_state_obs_9,"log_likelihood") %>% loo::waic() # VAR(9) model
+extract_log_lik(fit_state_obs_10,"log_likelihood") %>% loo::waic() # VAR(10) model
+
+### RMSE and plot ### 
+pred_value(fit = fit_state_obs_1,p = 1,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_2,p = 2,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_3,p = 3,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_4,p = 4,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_5,p = 5,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_6,p = 6,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_7,p = 7,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_8,p = 8,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_9,p = 9,dat=wind_data$theta_real)
+pred_value(fit = fit_state_obs_10,p = 10,dat=wind_data$theta_real)
+```
+
+<div class="column3">
+```{r echo=FALSE}
+pred_value(fit = fit_state_obs_2,p = 2,dat=wind_data$theta_real,dif = FALSE)
+```
+</div>
+
+<div class="column4">
+
+- $\hat{R} < 1.01$
+
+```{r echo=FALSE}
+data_frame(p = c(1,2,3,4,5,6,7,8,9,10),
+           WAIC = c(890.1,888.2,888.8, 890.1,888.2,889.8,885.2),
+           RMSE = c(0.993,0.987,0.989,0.989,0.984,0.980,0.979)) %>% 
+  formattable::formattable()
+```
+</div>
+
+## Summary
+
+- We get the model...
+
+# Appendix
+
+## Model Selection Criteria (WAIC)
+
+- WAIC can be viewed as an improvement on the DIC for Bayesian models. WAIC can be interpreted as a computationally convenient approximation to cross-validation and is defined as
+
+```{r, echo=FALSE, out.width = '90%'}
+knitr::include_graphics("data/WAIC.eps")
+```
+
+where $n$ is the number of data $\theta$, $S$ is MCMC sampling number of each parameter, $\eta^{m, S}$ is the $S$-th parameter set of the $m$-th chain.
 
 ## table sample
 
@@ -487,20 +640,6 @@ DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
               options=list(pageLength=5,deferRender = TRUE,
                            dom = "frtiS",scrollY = 200,scrollCollapse = TRUE)) 
 ```
-
-# Appendix
-
-## Model Selection Criteria (WAIC)
-
-- WAIC can be viewed as an improvement on the DIC for Bayesian models. WAIC can be interpreted as a computationally convenient approximation to cross-validation and is defined as
-
-```{r, echo=FALSE, out.width = '90%'}
-knitr::include_graphics("data/WAIC.eps")
-```
-
-where $n$ is the number of data $\theta$, $S$ is MCMC sampling number of each parameter, $\eta^{m, S}$ is the $S$-th parameter set of the $m$-th chain.
-
-
 
 
 
