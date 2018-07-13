@@ -5,13 +5,14 @@ date: "15 July 2018"
 author: "Takuto Kotsubo"
 output:
   revealjs::revealjs_presentation:
+    transition: slide
     reveal_option:
       slideNumber: true
       center: true
       font-family: 'Helvetica'
     theme: serif
-    # css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
-    css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
+    css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
+    #css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
 editor_options: 
   chunk_output_type: console
 ---
@@ -71,13 +72,13 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 
 1. Introduction
 
-2. Introduction of Circular Package and Circular statistics
+2. Circular Package and Circular statistics
 
-3. Introduction of Autoregressive model (AR model)
+3. Autoregressive model (AR model)
 
-4. Apply the Autoregressive model to the Circular data 
+4. Apply the AR model on the Circular data
 
-5. Build a Autoregressive model based on the Circular data
+5. Build a regressive model based on the Circular data
 
 6. Analysis for wind direction data
 
@@ -104,16 +105,19 @@ knitr::include_graphics("data/bouldering.png")
 ```
 </div>
 
-## Why did I come here ? 
+## Meeting circular statistics
 
-```{r, echo=FALSE, out.width = '75%'}
+```{r, echo=FALSE, out.width = '90%'}
 knitr::include_graphics("data/hongkong.png")
 ```
 
 ## Why did I come here ? 
 
+- I casually applied for it, but it's the gathering of great peaple...
 
-# Introduction of Circular Package and Circular statistics
+- Like everyone, I also want to listen to about Mr. Hadley's story, so stay with me for about 15 minutes.
+
+# Circular Package and Circular statistics
 
 ## Circular Statistics
 
@@ -123,10 +127,13 @@ knitr::include_graphics("data/hongkong.png")
 
 - The average of the angular values $1$ and $359$ is $0$ not $\pi$.
 
+```{r include=FALSE}
+set.seed(831)
+```
+
 ## Circular plot
 
 - We use `circular` package
-- ggplotで作成したものも載せる?
 
 ```{r fig.height=4}
 x <- circular(data.frame(runif(100,0,pi/2))) 
@@ -136,13 +143,27 @@ rose.diag(x,main = "rose diagrame")
 hist(x %>% as.vector(), main = "Histogram",xlab=expression(theta))
 ```
 
-## Circular mean direction
+## Circular plot by ggplot
 
-<div class="column3">
+- Of course, `ggplot` can do it...
+
+```{r fig.height=4}
+x <- data.frame(theta = runif(100,0,pi/2))
+ggplot(x, aes(x =theta)) + 
+  geom_histogram(bins = 24, colour = "grey") + 
+  coord_polar(start = 0)  + 
+  scale_fill_brewer() + 
+  scale_x_continuous("", limits = c(0, 2*pi), breaks = seq(0, 2*pi)) +
+  theme_minimal() +
+  labs(title = "Circular histogram")
+```
+
+## Circular mean direction
 
 - We consider the average of the two radians $\pi/3$ and $\pi/5$ (black line)
 - Arithmetic average is red line, circular mean direction is blue line
 
+<div class="column3">
 ```{r fig.height=5, echo=FALSE}
 y <- c(pi/3,pi*5/3)
 plot(circular(y),shrink = 1,main="Circular mean direction")
@@ -161,18 +182,22 @@ mean.circular(y)
 
 ## Circular Standard Deviation
 
-- 分散はどのように計算式違うの??
+- circular standard deviation is defined by $$\sqrt{-2 \log(\mbox{mean resultant length})}$$
 
 ```{r}
-x <- runif(100,0,pi/2)
-sd(x)
-sd.circular(circular(x))
+x <- runif(100,0,pi/2) # data
+```
+
+```{r}
+# normal standard deviation
+sd(x) 
+# circular standard deviation
+sd.circular(circular(x)) 
 ```
 
 ## Circular RMSE
 
 - RMSE is a measure of the differences between observed values ($\theta_t$) and predicted values ($\hat{\theta_t}$) by the model,
-- 図示しましょう
 
 $$\textrm{RMSE} = \sqrt{\frac{1}{n} \sum_{t=1}^n (\theta^{dif}_t)^2}, $$
 
@@ -186,6 +211,13 @@ $$
 	\end{cases}. 
 $$
 
+## Circular RMSE with plot
+
+- Difference betweeen $\frac{11 \pi}{6}$ and $\frac{\pi}{3}$ is not $\frac{3\pi}{2}$ but $\frac{\pi}{2}$ !!
+
+```{r, echo=FALSE, out.width = '75%'}
+knitr::include_graphics("data/dif.png")
+```
 
 ## Circular test
 
@@ -199,7 +231,7 @@ watson.wheeler.test(list(x,x)) # ??
 
 ## Circular-Circular Regresseion
 
-# Introduction of Autoegressive model (AR model)
+# Autoegressive model (AR model)
 
 ## Autoregressive process 
 
@@ -209,7 +241,7 @@ $$y_t = c + \sum_{i=1}^p \phi_i y_{t-i} + \varepsilon_t,~~ \varepsilon_t \sim \m
 
 - Joint probability distribution can be written as follows, using value before the time point $t$
 
-$$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_t f(y_t|y_{t-1}, ...,y_{t-p},c, \phi_i, \varepsilon). $$
+$$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_{t=1+p}^{n}f(y_t|y_{t-1}, ...,y_{t-p},c, \phi_i, \varepsilon). $$
 
 ## Maximize log likelihood method
 
@@ -218,6 +250,13 @@ $$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_t f(y_t|y_{t-1}, ...,y_{t-p},c
 $$ y_t|y_{t-1},...,y_{t-p} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\sigma^2). $$
 
 - Maxtimize the sum of log likelihoods at each time point
+
+$$
+\begin{eqnarray*}
+\mathcal{L} &=& \log f(y_1, y_2, ...|c, \phi_i, \varepsilon) \\ 
+&=& \log f(y_{1+p}|y_{p},...,y_{1}) + ... + \log f(y_{n}|y_{n-1},...,y_{n-p})
+\end{eqnarray*}
+$$
 
 ## Parameter estimation method
 
@@ -277,7 +316,7 @@ data.frame(lh) %>%
     geom_line()
 ```
 
-## Estimate AR($p$) model parameters
+## Estimate AR($3$) model parameters
 
 ```{r,echo= FALSE,eval=FALSE}
 # fit data 作成コード
@@ -329,6 +368,8 @@ pred_value(fit = fit6,p = 6,dat=as.vector(lh),who = 1)
 pred_value(fit = fit7,p = 7,dat=as.vector(lh),who = 1)
 ```
 
+- $\hat{R} < 1.01$ indicate all parameters convergence
+
 <div class="column3">
 ```{r include=FALSE}
 load("fit/AR_3.rda", verbose = TRUE) # load fit
@@ -351,8 +392,6 @@ data.frame(real=as.vector(lh),pred) %>%
 
 <div class="column4">
 
-- $\hat{R} < 1.01$
-
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7),
            WAIC = c(64.6,63.8,63.7,65.2,66.4,65.4,65.4),
@@ -360,6 +399,7 @@ data_frame(p = c(1,2,3,4,5,6,7),
   formattable::formattable(list(WAIC = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA)),
                                 RMSE = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA))))
 ```
+
 </div>
 
 # Apply the Autoregressive model to the Circular data 
@@ -384,6 +424,9 @@ wind_data %>%
 ```
 
 ## Apply the Autoregressive model
+
+- $\hat{R} < 1.01$ indicate all parameters convergence
+- but fitting is wrong ...
 
 ```{r eval=FALSE,echo=FALSE}
 # read model
@@ -464,13 +507,9 @@ data.frame(real=wind_data$theta_real,pred) %>%
     labs(y=expression(theta))
 ```
 
-- not fitting...
-
 </div>
 
 <div class="column4">
-
-- $\hat{R} < 1.01$
 
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7),
@@ -482,6 +521,91 @@ data_frame(p = c(1,2,3,4,5,6,7),
 </div>
 
 # Build a Auto Regressive model based on the Circular data
+
+## Circular Vector Autoregressive model
+
+$$
+\left(
+  \begin{array}{c}
+    \cos \theta_t \\
+    \sin \theta_t
+  \end{array}
+\right) =
+\left(
+  \begin{array}{c}
+    \alpha_{c,0} \\
+    \alpha_{s,0}
+  \end{array} 
+\right) +
+\left(
+  \begin{array}{cc}
+    \beta_{c,1,1} & \beta_{c,1,2} \\
+    \beta_{s,1,1} & \beta_{s,1,2}
+  \end{array}
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-1} \\
+    \sin \theta_{t-1}
+  \end{array} 
+\right) \\ +
+\left(
+  \begin{array}{cc}
+    \beta_{c,2,1} & \beta_{c,2,2} \\
+    \beta_{s,2,1} & \beta_{s,2,2}
+  \end{array} 
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-2} \\
+    \sin \theta_{t-2}
+  \end{array} 
+\right) + \cdots + \\ 
+\left(
+  \begin{array}{cc}
+    \beta_{c,p,1} & \beta_{c,p,2} \\
+    \beta_{s,p,1} & \beta_{s,p,2}
+  \end{array}
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-p} \\
+    \sin \theta_{t-p}
+  \end{array} 
+\right) +
+\left(  
+  \begin{array}{c}
+    \varepsilon_{c,t} \\
+    \varepsilon_{s,t}
+  \end{array}
+\right)
+$$ 
+
+where $\boldsymbol{\alpha}, \boldsymbol{\beta}$ is coefficient parameters and $\boldsymbol{\varepsilon}$ is variance parameter.
+
+$$
+\left(
+  \begin{array}{c}
+    \varepsilon_{c,t} \\
+    \varepsilon_{s,t}
+  \end{array} 
+\right) \sim 
+N 
+\left(
+  \left(
+    \begin{array}{c}
+      0 \\
+      0
+    \end{array}
+  \right),
+  \left(
+    \begin{array}{cc}
+      \sigma_c^2 & \rho \sigma_c \sigma_s \\
+      \rho \sigma_c \sigma_s & \sigma_s^2
+    \end{array}
+  \right)
+\right)
+$$
 
 # Analysis for wind direction data
 
@@ -550,6 +674,8 @@ stan_plot(fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T,
 ```
 
 ## Apply the Circular-VAR model
+
+- $\hat{R} < 1.01$ indicate all parameters convergence
 
 ```{r eval=FALSE,echo=FALSE}
 # read model
@@ -626,8 +752,6 @@ pred_value(fit = fit_state_obs_5,p = 5,dat=wind_data$theta_real,dif = FALSE)
 
 <div class="column4">
 
-- $\hat{R} < 1.01$
-
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7,8,9,10),
            WAIC = c(444.2,442.5,435.0,436.6,431.9,437.4,449.6,456.4,466.6,461.3),
@@ -652,6 +776,21 @@ knitr::include_graphics("data/WAIC.eps")
 ```
 
 where $n$ is the number of data $\theta$, $S$ is MCMC sampling number of each parameter, $\eta^{m, S}$ is the $S$-th parameter set of the $m$-th chain.
+
+## Projected Normal Distribution
+
+- Distributions of the circle can be obtained by radial projection of distributions on the plane.
+- The density of $\Theta$ in $U = (\cos\Theta, \sin\Theta)^T$ can be represented as 
+
+$$
+\begin{eqnarray*}
+p(\theta|\mu, \Sigma) = \frac{1}{2\pi A(\theta)} |\Sigma|^{-\frac{1}{2}}
+\exp(C)\left\{1 + \frac{B(\theta)}{\sqrt{A(\theta)}} \frac{\Phi \left(\frac{B(\theta)}{\sqrt{A(\theta)}}\right)}{\varphi \left(\frac{B(\theta)}{\sqrt{A(\theta)}}\right)}\right\},
+\end{eqnarray*}
+$$
+
+
+where $u^T = (\cos\theta,\sin\theta), A(\theta) =  u^T\Sigma^{-1} u, \ B(\theta) =  u^T \Sigma^{-1} \mu$ and $\ C = -\frac{1}{2} \mu^T \Sigma^{-1} \mu$. $\Phi(\cdot), \varphi(\cdot)$ are the standard normal distribution and density functions.
 
 ## table sample
 
