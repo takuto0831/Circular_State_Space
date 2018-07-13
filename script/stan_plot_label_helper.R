@@ -187,7 +187,16 @@ check_pars_second <- function(sim, pars) {
   pp <- factor(rep(1:np, each = nc * nl), labels = levels(pa))
   data.frame(parameters = pp, chains = ch, ac = do.call(c, ac_list), lag = ll)
 }
-
+.reshape_sample <- function(x) {
+  res <- lapply(seq_along(x), function(i) {
+    data.frame(value = unlist(x[[i]], use.names = FALSE),
+               parameter = rep(names(x[[i]]), each = length(x[[i]][[1L]])),
+               chain = i)
+  })
+  res <- do.call(rbind, res)
+  res$parameter <- as.character(res$parameter)
+  res
+}
 # defaults ----------------------------------------------------------------
 .rstanvis_defaults <- new.env(parent = emptyenv())
 .rstanvis_defaults$theme <-
