@@ -67,7 +67,7 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 
 ## Table of content
 
-- My profile
+- Introduction
 
 - Introduction of Circular Package and Circular statistics
 
@@ -79,7 +79,7 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 
 - Analysis for wind direction data
 
-# My profile
+# Introduction
 
 ## My profile
 
@@ -101,6 +101,8 @@ knitr::include_graphics("data/ramen.png")
 knitr::include_graphics("data/bouldering.png")
 ```
 </div>
+
+## Why did I come here ?? 
 
 # Introduction of Circular Package and Circular statistics
 
@@ -496,21 +498,22 @@ d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) 
 ## Autocorrelation of Markov Chains
 
 ```{r include=FALSE}
-load("fit/CircularVAR_2.rda", verbose = TRUE) # load fit
+load("fit/CircularVAR_5.rda", verbose = TRUE) # load fit
 ```
 
 ```{r echo=FALSE}
-stan_plot(fit1_4,fill_color ="blue",point_est ="median",show_density=T, pars = c("alpha_0","alpha_1","sigma[1,1]","sigma[1,2]","sigma[2,2]"), 
-          ci_level = 0.95, outer_level=1.00, show_outer_line =T) + 
-          scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]),
-                                            expression(beta[paste("c,",1,",",2)]),expression(beta[paste("s,",1,",",1)]),expression(beta[paste("s,",1,",",2)]),
-                                            expression(Sigma[paste(1,",",1)]),expression(Sigma[paste(1,",",2)]),
-                                            expression(Sigma[paste(2,",",2)]))), breaks = 1:9)
+stan_plot(fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T, ci_level = 0.95, outer_level=1.00, show_outer_line =T,
+          pars = c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]","alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]","alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")) + 
+  scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]), 
+                                    expression(beta[paste("c,",1,",",2)]),expression(beta[paste("s,",1,",",1)]),expression(beta[paste("s,",1,",",2)]),
+                                    expression(beta[paste("c,",2,",",1)]),expression(beta[paste("c,",2,",",2)]),expression(beta[paste("s,",2,",",1)]),
+                                    expression(beta[paste("s,",2,",",2)]))), breaks = 1:10)
+
 ```
 
 ## Posterior Distributions
 
-```{r echo=FALSE}
+```{r echo=FALSE,eval=FALSE}
 pars = c("alpha_0","alpha_1","sigma[1,1]","sigma[1,2]","sigma[2,2]")
 label_set = list("alpha_0[1]" = expression(alpha[paste("c,",0)]), "alpha_0[2]" = expression(alpha[paste("s,",0)]),
                  "alpha_1[1,1]" = expression(beta[paste("c,",1,",",1)]), "alpha_1[1,2]" = expression(beta[paste("c,",1,",",2)]),
@@ -592,7 +595,7 @@ pred_value(fit = fit_state_obs_10,p = 10,dat=wind_data$theta_real)
 
 <div class="column3">
 ```{r echo=FALSE}
-pred_value(fit = fit_state_obs_2,p = 2,dat=wind_data$theta_real,dif = FALSE)
+pred_value(fit = fit_state_obs_5,p = 5,dat=wind_data$theta_real,dif = FALSE)
 ```
 </div>
 
@@ -601,7 +604,7 @@ pred_value(fit = fit_state_obs_2,p = 2,dat=wind_data$theta_real,dif = FALSE)
 - $\hat{R} < 1.01$
 
 ```{r echo=FALSE}
-data_frame(p = c(1,2,3,4,5,6,7,8,9,10),
+data_frame(p = c(1,2,3,4,5,6,7),
            WAIC = c(890.1,888.2,888.8, 890.1,888.2,889.8,885.2),
            RMSE = c(0.993,0.987,0.989,0.989,0.984,0.980,0.979)) %>% 
   formattable::formattable()
