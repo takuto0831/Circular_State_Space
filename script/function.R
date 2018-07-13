@@ -202,7 +202,7 @@ pred_value <- function(fit,p,dat,who=2,dif = TRUE){
     # geom_ribbon(aes(ymin=lower,ymax=upper),fill="skyblue",alpha=0.6) +
     geom_line(aes(y=real, colour= "real")) + 
     geom_line(aes(y=predict, colour= "predict")) +
-    facet_zoom(x = index >= (length(dat) -50)) + 
+    facet_zoom(x = index > 200 & index < 250) + 
     scale_colour_manual("",
                         values = c("real"="black","predict"="blue")
     ) +
@@ -335,7 +335,7 @@ stan_ac_label <- function (object, pars, label_set, include = TRUE, unconstrain 
   y_scale <- scale_y_continuous(labels = seq(0, 1, 0.25))
   base <- ggplot(ac_dat, aes_string(x = "lag", y = "ac"))
   graph <- base + 
-    geom_bar(stat = "kentity", fill = "blue") +
+    geom_bar(stat = 'identity', fill = "blue") +
     y_scale + ac_labs + thm +
     facet_wrap(~parameters, nrow = nrow, ncol = ncol, scales = "free_x",labeller = label_set) +
     theme(strip.text.x = element_text(size = 12))
