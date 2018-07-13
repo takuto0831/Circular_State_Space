@@ -29,7 +29,7 @@ knitr:::opts_chunk$set(cache=TRUE,
 knitr:::opts_knit$set(width=75)
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, cache=FALSE}
 # set package
 library(revealjs)
 library(dplyr)
@@ -69,17 +69,17 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 
 ## Table of content
 
-- Introduction
+1. Introduction
 
-- Introduction of Circular Package and Circular statistics
+2. Introduction of Circular Package and Circular statistics
 
-- Introduction of Autoregressive model (AR model)
+3. Introduction of Autoregressive model (AR model)
 
-- Apply the Autoregressive model to the Circular data 
+4. Apply the Autoregressive model to the Circular data 
 
-- Build a Autoregressive model based on the Circular data
+5. Build a Autoregressive model based on the Circular data
 
-- Analysis for wind direction data
+6. Analysis for wind direction data
 
 # Introduction
 
@@ -106,7 +106,9 @@ knitr::include_graphics("data/bouldering.png")
 
 ## Why did I come here ? 
 
-香港のお話
+```{r, echo=FALSE, out.width = '75%'}
+knitr::include_graphics("data/hongkong.png")
+```
 
 ## Why did I come here ? 
 
