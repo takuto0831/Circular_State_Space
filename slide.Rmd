@@ -10,8 +10,8 @@ output:
       center: true
       font-family: 'Helvetica'
     theme: serif
-    css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
-    # css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
+    # css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
+    css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
 editor_options: 
   chunk_output_type: console
 ---
@@ -29,7 +29,7 @@ knitr:::opts_chunk$set(cache=TRUE,
 knitr:::opts_knit$set(width=75)
 ```
 
-```{r include=FALSE}
+```{r echo=FALSE}
 # set package
 library(revealjs)
 library(dplyr)
@@ -51,6 +51,8 @@ library(formattable)
 
 # load function
 source('~/Desktop/circular_reg/script/function.R') # 関数読み込み
+# source('~/Desktop/circular_reg/script/stan_plot_label_helper.R')
+# source('~/Desktop/circular_reg/script/misc.R')
 .myfunc.env = new.env() # 関数をグローバル変数に表示しない
 sys.source('~/Desktop/circular_reg/script/stan_plot_label_helper.R', envir = .myfunc.env) # stan_ac_labelに必要
 sys.source('~/Desktop/circular_reg/script/misc.R', envir = .myfunc.env) # stan_ac_labelに必要
@@ -102,7 +104,12 @@ knitr::include_graphics("data/bouldering.png")
 ```
 </div>
 
-## Why did I come here ?? 
+## Why did I come here ? 
+
+香港のお話
+
+## Why did I come here ? 
+
 
 # Introduction of Circular Package and Circular statistics
 
@@ -117,6 +124,7 @@ knitr::include_graphics("data/bouldering.png")
 ## Circular plot
 
 - We use `circular` package
+- ggplotで作成したものも載せる?
 
 ```{r fig.height=4}
 x <- circular(data.frame(runif(100,0,pi/2))) 
@@ -162,6 +170,7 @@ sd.circular(circular(x))
 ## Circular RMSE
 
 - RMSE is a measure of the differences between observed values ($\theta_t$) and predicted values ($\hat{\theta_t}$) by the model,
+- 図示しましょう
 
 $$\textrm{RMSE} = \sqrt{\frac{1}{n} \sum_{t=1}^n (\theta^{dif}_t)^2}, $$
 
@@ -341,13 +350,13 @@ data.frame(real=as.vector(lh),pred) %>%
 <div class="column4">
 
 - $\hat{R} < 1.01$
-- Rmse 間違っている, (circular 式で計算している)
 
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7),
            WAIC = c(64.6,63.8,63.7,65.2,66.4,65.4,65.4),
-           RMSE = c(0.449,0.449,0.442,0.438,0.441,0.430,0.425)) %>% 
-  formattable::formattable()
+           RMSE = c(0.449,0.442,0.436,0.438,0.441,0.430,0.425)) %>% 
+  formattable::formattable(list(WAIC = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA)),
+                                RMSE = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA))))
 ```
 </div>
 
@@ -436,11 +445,21 @@ pred_value(fit = fit_ar_7,p = 7,dat=wind_data$theta_real,who=1)
 
 <div class="column3">
 ```{r include=FALSE}
-load("fit/CircularAR_2.rda", verbose = TRUE) # load fit
+load("fit/CircularAR_7.rda", verbose = TRUE) # load fit
 ```
 
 ```{r echo=FALSE}
-pred_value(fit = fit_ar_2,p = 2,dat=wind_data$theta_real,who = 1,dif = FALSE)
+pred <- ans_stan_p2(fit_ar_7, P=7, data=wind_data$theta_real)
+data.frame(real=wind_data$theta_real,pred) %>% 
+    mutate(index = row_number()) %>%
+    ggplot(aes(x=index)) +
+    # geom_ribbon(aes(ymin=lower,ymax=upper),fill="skyblue",alpha=0.6) +
+    geom_line(aes(y=real, colour= "real")) + 
+    geom_line(aes(y=predict, colour= "predict")) +
+    scale_colour_manual("",
+                        values = c("real"="black","predict"="blue")
+    ) +
+    labs(y=expression(theta))
 ```
 
 - not fitting...
@@ -453,9 +472,10 @@ pred_value(fit = fit_ar_2,p = 2,dat=wind_data$theta_real,who = 1,dif = FALSE)
 
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7),
-           WAIC = c(890.1,888.2,888.8, 890.1,888.2,889.8,885.2),
+           WAIC = c(890.1,888.2,888.8, 889.8,885.2,888.3,882.5),
            RMSE = c(0.993,0.987,0.989,0.989,0.984,0.980,0.979)) %>% 
-  formattable::formattable()
+  formattable::formattable(list(WAIC = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA)),
+                                RMSE = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA))))
 ```
 </div>
 
@@ -495,33 +515,36 @@ d.dat8 <- list(N=length(wind_data$theta_real),P=8,theta=wind_data$theta_real) # 
 d.dat9 <- list(N=length(wind_data$theta_real),P=9,theta=wind_data$theta_real) # for VAR(9)
 d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) # for VAR(10)
 ```
+
 ## Autocorrelation of Markov Chains
+
+- parameterの自己相関を一部確認 
 
 ```{r include=FALSE}
 load("fit/CircularVAR_5.rda", verbose = TRUE) # load fit
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE,fig.height=4}
+pars <- c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]","alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]","alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")
+label_set <- list("alpha_0[1]" = expression(alpha[paste("c,",0)]),"alpha_0[2]" = expression(alpha[paste("s,",0)]),"alpha_1[1,1]" = expression(beta[paste("c,",1,",",1)]), 
+                  "alpha_1[1,2]" = expression(beta[paste("c,",1,",",2)]),"alpha_1[2,1]" = expression(beta[paste("s,",1,",",1)]),"alpha_1[2,2]" = expression(beta[paste("s,",1,",",2)]),
+                  "alpha_1[1,3]" = expression(beta[paste("c,",2,",",1)]),"alpha_1[1,4]" = expression(beta[paste("c,",2,",",2)]),"alpha_1[2,3]" = expression(beta[paste("s,",2,",",1)]),
+                  "alpha_1[2,4]" = expression(beta[paste("s,",2,",",2)]))
+label_func <- function(variable, value) return(label_set[value]) # label func
+stan_ac_label(object=fit_state_obs_5,pars = pars,label_set = label_func) # stan_ac plot with arbitrary faaet_wrap label
+```
+
+## Posterior Distributions
+
+- paraeter の事後分布を一部確認
+
+```{r echo=FALSE,fig.height=4}
 stan_plot(fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T, ci_level = 0.95, outer_level=1.00, show_outer_line =T,
           pars = c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]","alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]","alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")) + 
   scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]), 
                                     expression(beta[paste("c,",1,",",2)]),expression(beta[paste("s,",1,",",1)]),expression(beta[paste("s,",1,",",2)]),
                                     expression(beta[paste("c,",2,",",1)]),expression(beta[paste("c,",2,",",2)]),expression(beta[paste("s,",2,",",1)]),
                                     expression(beta[paste("s,",2,",",2)]))), breaks = 1:10)
-
-```
-
-## Posterior Distributions
-
-```{r echo=FALSE,eval=FALSE}
-pars = c("alpha_0","alpha_1","sigma[1,1]","sigma[1,2]","sigma[2,2]")
-label_set = list("alpha_0[1]" = expression(alpha[paste("c,",0)]), "alpha_0[2]" = expression(alpha[paste("s,",0)]),
-                 "alpha_1[1,1]" = expression(beta[paste("c,",1,",",1)]), "alpha_1[1,2]" = expression(beta[paste("c,",1,",",2)]),
-                 "alpha_1[2,1]" = expression(beta[paste("s,",1,",",1)]), "alpha_1[2,2]" = expression(beta[paste("s,",1,",",2)]),
-                 "sigma[1,1]" = expression(Sigma[paste(1,",",1)]),"sigma[1,2]" = expression(Sigma[paste(1,",",2)]),"sigma[2,2]" = expression(Sigma[paste(2,",",2)]))
-label_func <- function(variable, value) return(label_set[value])
-
-stan_ac_label(object=fit1_4,pars = pars,label_set = label_func)
 ```
 
 ## Apply the Circular-VAR model
@@ -594,7 +617,7 @@ pred_value(fit = fit_state_obs_10,p = 10,dat=wind_data$theta_real)
 ```
 
 <div class="column3">
-```{r echo=FALSE}
+```{r echo=FALSE,fig.height=4}
 pred_value(fit = fit_state_obs_5,p = 5,dat=wind_data$theta_real,dif = FALSE)
 ```
 </div>
@@ -604,10 +627,11 @@ pred_value(fit = fit_state_obs_5,p = 5,dat=wind_data$theta_real,dif = FALSE)
 - $\hat{R} < 1.01$
 
 ```{r echo=FALSE}
-data_frame(p = c(1,2,3,4,5,6,7),
-           WAIC = c(890.1,888.2,888.8, 890.1,888.2,889.8,885.2),
-           RMSE = c(0.993,0.987,0.989,0.989,0.984,0.980,0.979)) %>% 
-  formattable::formattable()
+data_frame(p = c(1,2,3,4,5,6,7,8,9,10),
+           WAIC = c(444.2,442.5,435.0,436.6,431.9,437.4,449.6,456.4,466.6,461.3),
+           RMSE = c(0.915,0.902,0.908,0.899,0.892,0.884,0.886,0.885,0.886,0.882)) %>% 
+   formattable::formattable(list(WAIC = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA)),
+                                 RMSE = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA))))
 ```
 </div>
 
@@ -631,7 +655,7 @@ where $n$ is the number of data $\theta$, $S$ is MCMC sampling number of each pa
 
 - we calculate WAIC and RMSE
 
-```{r echo=FALSE}
+```{r echo=FALSE,eval=FALSE}
 DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
                          RMSE = c(1,2,3,4,5,6,7,8,9,0)),
               rownames = TRUE,
