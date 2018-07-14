@@ -11,8 +11,8 @@ output:
       center: true
       font-family: 'Helvetica'
     theme: serif
-    css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
-    #css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
+    #css: /Users/takutokotsubo/Desktop/circular_reg/data/custom.css # for imac
+    css: /Users/takuto/Desktop/circular_reg/data/custom.css # for macbook
 editor_options: 
   chunk_output_type: console
 ---
@@ -78,9 +78,9 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 
 4. Apply the AR model on the Circular data
 
-5. Build a Autoregressive model based on the Circular data
+5. Make the Autoregressive model based on the Circular
 
-6. Analysis for wind direction data
+6. Analysis for the wind direction data
 
 # Introduction
 
@@ -134,9 +134,9 @@ knitr::include_graphics("data/ecosta2.png")
 
 ## Circular Statistics
 
-- Circular or directional data refers to data recorded as points which directions are measured and arises in biology, geography, medicine, astronomy, and many other areas.
+- Circular data refers to data recorded as points which directions are measured and arises in biology, geography, medicine, astronomy, and many other areas.
  
-- The usual summary statistics, such as the sample mean and standard deviation, cannot be used with angular values.
+- The usual summary statistics, such as the mean and standard deviation, cannot be used with angular values.
 
 ```{r include=FALSE}
 set.seed(831)
@@ -158,15 +158,13 @@ hist(x %>% as.vector(), main = "Histogram",xlab=expression(theta))
 
 - Of course, `ggplot` can do it and beautiful...
 
-```{r fig.height=4}
+```{r, out.width = '50%'}
 x <- data.frame(theta = runif(100,0,pi/2))
 ggplot(x, aes(x =theta)) + 
-  geom_histogram(bins = 24, colour = "grey") + 
-  coord_polar(start = 0)  + 
-  scale_fill_brewer() + 
+  geom_histogram(bins = 50, fill = "skyblue") + 
+  coord_polar(start = 0)  + scale_fill_brewer() + 
   scale_x_continuous("", limits = c(0, 2*pi), breaks = seq(0, 2*pi)) +
-  theme_minimal() +
-  labs(title = "Circular histogram")
+  theme_minimal() + labs(title = "Circular histogram")
 ```
 
 ## Circular mean direction
@@ -244,7 +242,7 @@ knitr::include_graphics("data/dif.png")
 
 - Mardia-Watoson-Wheeler test : Whether the angle data of the two groups follow the same distribution ...
 
-# Autoegressive model (AR model)
+# Autoregressive model (AR model)
 
 ## Autoregressive process 
 
@@ -262,7 +260,7 @@ $$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_{t=1+p}^{n}f(y_t|y_{t-1}, ...,
 
 $$ y_t|y_{t-1},...,y_{t-p} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\sigma^2). $$
 
-- Maxtimize the sum of log likelihoods at each time point
+- Maximize the sum of log likelihoods at each time point
 
 $$
 \begin{eqnarray*}
@@ -429,6 +427,8 @@ data_frame(p = c(1,2,3,4,5,6,7),
 
 ## Autocorrelation of Markov Chains
 
+- Autocorrelation plots shows convergence
+
 ```{r echo=FALSE,fig.height=4}
 pars <- c("alpha_0","alpha_1[1]","alpha_1[2]","alpha_1[3]","sigma")
 label_set <- list("alpha_0[1]" = expression(c),"alpha_1[1]" = expression(phi[1]), "alpha_1[2]" = expression(phi[2]),
@@ -587,7 +587,7 @@ data_frame(p = c(1,2,3,4,5,6,7),
 ```
 </div>
 
-# Build a Autoregressive model based on the Circular 
+# Make the Autoregressive model based on the Circular 
 
 ## State-space model
 
@@ -873,7 +873,7 @@ generated quantities{
 }
 ```
 
-# Analysis for wind direction data
+# Analysis for the wind direction data
 
 ## Wind Direction in Col de la Roa
 
@@ -933,6 +933,8 @@ fit_state_obs_5 <- sampling(state_obs_model,data = d.dat5, iter=5000, chains=4) 
 ```
 
 ## Autocorrelation of Markov Chains
+
+- Autocorrelation plots shows convergence
 
 ```{r include=FALSE}
 load("fit/CircularVAR_5.rda", verbose = TRUE) # load fit
