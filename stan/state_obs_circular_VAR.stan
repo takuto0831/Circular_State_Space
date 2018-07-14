@@ -1,28 +1,24 @@
 functions{
-  // state model
-  real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
-    vector[2*P] tmp; vector[2] mu; real p;
-    for(k in 1:P){
-      tmp[2*k-1] = cos(pre_theta[k]); 
-      tmp[2*k] = sin(pre_theta[k]);
-    }
-    mu = alpha_0 + ( alpha_1 * tmp); 
-    p = multi_normal_lpdf(u|mu,sigma);
-    return p;
-  }
-  // observation model
+    // PN distribution (observation model)
   real circular_obs_lpdf(real theta, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
-    vector[2] u; vector[2] mu; vector[2*P] tmp; 
-    real A; real B; real C; real D; real p;
+    vector[2] u; vector[2] mu; vector[2*P] tmp; real A; real B; real C; real D; real p;
     for(k in 1:P){
-      tmp[2*k-1] = cos(pre_theta[k]); 
-      tmp[2*k] = sin(pre_theta[k]);
+      tmp[2*k-1] = cos(pre_theta[k]); tmp[2*k] = sin(pre_theta[k]);
     }
-    mu = alpha_0 + ( alpha_1 * tmp); 
-    u[1] = cos(theta); u[2] = sin(theta);
+    mu = alpha_0 + ( alpha_1 * tmp); u[1] = cos(theta); u[2] = sin(theta);
     A = quad_form(inverse_spd(sigma), u); B = u' * inverse_spd(sigma) * mu;
     C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
     p = - log(A) - 0.5*log(determinant(sigma)) + C + log(1+(D * (normal_cdf(D,0,1)/ (exp(-D^2 /2)/sqrt(2*pi()))))); 
+    return p;
+  }
+  // Multi Normal distribution (state model)
+  real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
+    vector[2*P] tmp; vector[2] mu; real p;
+    for(k in 1:P){
+      tmp[2*k-1] = cos(pre_theta[k]); tmp[2*k] = sin(pre_theta[k]);
+    }
+    mu = alpha_0 + ( alpha_1 * tmp); 
+    p = multi_normal_lpdf(u|mu,sigma);
     return p;
   }
 }
@@ -49,7 +45,6 @@ parameters{
 }
 
 model{
-  // パラメータの事前分布の分散の値も入力データとする
   alpha_0[1] ~ normal(0,100); alpha_0[2] ~ normal(0,100);
   for(i in 1:2*P){
     alpha_1[1,i] ~ normal(0,100); // N(0,100)
