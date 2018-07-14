@@ -22,3 +22,7 @@
 .reveal .slides section .back1 {
   background-image: url(face.png);
 }
+
+.reveal .slides section .text1 {
+  font-size: 2.0em;
+}
