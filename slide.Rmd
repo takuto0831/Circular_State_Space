@@ -156,15 +156,15 @@ hist(x %>% as.vector(), main = "Histogram",xlab=expression(theta))
 
 ## Circular plot
 
-- Of course, `ggplot` can do it and beautiful...
+- Of course, `ggplot` can do it and more beautiful...
 
 ```{r, out.width = '50%'}
 x <- data.frame(theta = runif(100,0,pi/2))
 ggplot(x, aes(x =theta)) + 
-  geom_histogram(bins = 50, fill = "skyblue") + 
+  geom_histogram(bins = 50, fill = "steelblue") + 
   coord_polar(start = 0)  + scale_fill_brewer() + 
   scale_x_continuous("", limits = c(0, 2*pi), breaks = seq(0, 2*pi)) +
-  theme_minimal() + labs(title = "Circular histogram")
+  theme_bw() + labs(title = "Circular histogram")
 ```
 
 ## Circular mean direction
@@ -260,7 +260,7 @@ $$f(y_1, y_2, ...|c, \phi_i, \varepsilon) = \prod_{t=1+p}^{n}f(y_t|y_{t-1}, ...,
 
 $$ y_t|y_{t-1},...,y_{t-p} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\sigma^2). $$
 
-- Maximize the sum of log likelihoods at each time point
+- Consider the log likelihoods at each time point
 
 $$
 \begin{eqnarray*}
@@ -427,9 +427,7 @@ data_frame(p = c(1,2,3,4,5,6,7),
 
 ## Autocorrelation of Markov Chains
 
-- Autocorrelation plots shows convergence
-
-```{r echo=FALSE,fig.height=4}
+```{r echo=FALSE,out.width = '85%'}
 pars <- c("alpha_0","alpha_1[1]","alpha_1[2]","alpha_1[3]","sigma")
 label_set <- list("alpha_0[1]" = expression(c),"alpha_1[1]" = expression(phi[1]), "alpha_1[2]" = expression(phi[2]),
                   "alpha_1[3]" = expression(phi[3]),"sigma" = expression(sigma))
@@ -439,7 +437,7 @@ stan_ac_label(object=fit3,pars = pars,label_set = label_func) # stan_ac plot wit
 
 ## Posterior Distributions
 
-```{r echo=FALSE,fig.height=4}
+```{r echo=FALSE,out.width = '85%'}
 stan_plot(fit3,fill_color ="blue",point_est ="median",show_density=T, ci_level = 0.95, outer_level=1.00, show_outer_line =T,
           pars = c("alpha_0","alpha_1[1]","alpha_1[2]","alpha_1[3]","sigma")) + 
   scale_y_continuous(labels = rev(c(expression(c),expression(phi[1]),expression(phi[2]),expression(phi[3]),expression(sigma))), breaks = 1:5)
@@ -449,7 +447,7 @@ stan_plot(fit3,fill_color ="blue",point_est ="median",show_density=T, ci_level =
 
 ## Wind Direction in Col de la Roa
 
-- In a place named "Col de la Roa" in the Italian Alps, It reported the wind direction records every day
+- In a place named "Col de la Roa" in the Italian Alps, It reported the wind direction records (`wind` data set)
 - Total of 310 measures
 
 ```{r echo=FALSE,fig.height=4}
@@ -487,7 +485,8 @@ rstan_options(auto_write=TRUE) # auto save
 options(mc.cores=parallel::detectCores()) # multi core
 
 ar2_model <- readRDS("model/circular_AR2.rds") # complie model
-fit_ar_7 <- sampling(ar_model,data = d.dat7, iter=2000, chains=4)# sampling by model
+fit_ar_7 <- sampling(ar_model,data = d.dat7, 
+                     iter=2000, chains=4) # sampling by model
 ```
 
 ##  Select AR($7$) model by WAIC
@@ -591,7 +590,7 @@ data_frame(p = c(1,2,3,4,5,6,7),
 
 ## State-space model
 
-```{r, echo=FALSE, out.width = '90%'}
+```{r, echo=FALSE, out.width = '100%'}
 knitr::include_graphics("data/obs_state_model.png")
 ```
 
@@ -604,9 +603,9 @@ $$\mu_t = \left(
 
 ## $\mathcal{PN}$ distribution
 
-- **If rstan, you can decsribe a distribution that you don't understand**
+- **If rstan, you can decsribe a complex distribution**
 
-```{r, echo=FALSE, out.width = '90%'}
+```{r, echo=FALSE, out.width = '140%'}
 knitr::include_graphics("data/stan1.png")
 ```
 
@@ -784,9 +783,9 @@ $$
 
 ## Circular State-space model
 
-- **Easy to write if rstan**
+- **Easy to write using rstan**
 
-```{r, echo=FALSE, out.width = '90%'}
+```{r, echo=FALSE, out.width = '100%'}
 knitr::include_graphics("data/stan2.png")
 ```
 
@@ -794,30 +793,26 @@ knitr::include_graphics("data/stan2.png")
 
 ```
 functions{
-  // state model
-  real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
-    vector[2*P] tmp; vector[2] mu; real p;
-    for(k in 1:P){
-      tmp[2*k-1] = cos(pre_theta[k]); 
-      tmp[2*k] = sin(pre_theta[k]);
-    }
-    mu = alpha_0 + ( alpha_1 * tmp); 
-    p = multi_normal_lpdf(u|mu,sigma);
-    return p;
-  }
-  // observation model
+    // PN distribution (observation model)
   real circular_obs_lpdf(real theta, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
-    vector[2] u; vector[2] mu; vector[2*P] tmp; 
-    real A; real B; real C; real D; real p;
+    vector[2] u; vector[2] mu; vector[2*P] tmp; real A; real B; real C; real D; real p;
     for(k in 1:P){
-      tmp[2*k-1] = cos(pre_theta[k]); 
-      tmp[2*k] = sin(pre_theta[k]);
+      tmp[2*k-1] = cos(pre_theta[k]); tmp[2*k] = sin(pre_theta[k]);
     }
-    mu = alpha_0 + ( alpha_1 * tmp); 
-    u[1] = cos(theta); u[2] = sin(theta);
+    mu = alpha_0 + ( alpha_1 * tmp); u[1] = cos(theta); u[2] = sin(theta);
     A = quad_form(inverse_spd(sigma), u); B = u' * inverse_spd(sigma) * mu;
     C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
     p = - log(A) - 0.5*log(determinant(sigma)) + C + log(1+(D * (normal_cdf(D,0,1)/ (exp(-D^2 /2)/sqrt(2*pi()))))); 
+    return p;
+  }
+  // Multi Normal distribution (state model)
+  real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
+    vector[2*P] tmp; vector[2] mu; real p;
+    for(k in 1:P){
+      tmp[2*k-1] = cos(pre_theta[k]); tmp[2*k] = sin(pre_theta[k]);
+    }
+    mu = alpha_0 + ( alpha_1 * tmp); 
+    p = multi_normal_lpdf(u|mu,sigma);
     return p;
   }
 }
@@ -871,13 +866,14 @@ generated quantities{
                           circular_obs_lpdf(theta[n]|P, pre_theta, alpha_0, alpha_1, sigma);
   } 
 }
+
 ```
 
 # Analysis for the wind direction data
 
 ## Wind Direction in Col de la Roa
 
-- In a place named "Col de la Roa" in the Italian Alps, It reported the wind direction records every day
+- In a place named "Col de la Roa" in the Italian Alps, It reported the wind direction records (`wind` data set)
 - Total of 310 measures
 
 ```{r echo=FALSE,fig.height=4}
@@ -929,18 +925,17 @@ rstan_options(auto_write=TRUE) # auto save
 options(mc.cores=parallel::detectCores()) # multi core
 
 state_obs_model <- readRDS("model/state_obs_circular_VAR.rds") # complie model
-fit_state_obs_5 <- sampling(state_obs_model,data = d.dat5, iter=5000, chains=4) # sampling by model
+fit_state_obs_5 <- sampling(state_obs_model,data = d.dat5, 
+                            iter=5000, chains=4) # sampling by model
 ```
 
 ## Autocorrelation of Markov Chains
-
-- Autocorrelation plots shows convergence
 
 ```{r include=FALSE}
 load("fit/CircularVAR_5.rda", verbose = TRUE) # load fit
 ```
 
-```{r echo=FALSE,fig.height=4}
+```{r echo=FALSE,out.width = '85%'}
 pars <- c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]","alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]","alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")
 label_set <- list("alpha_0[1]" = expression(alpha[paste("c,",0)]),"alpha_0[2]" = expression(alpha[paste("s,",0)]),"alpha_1[1,1]" = expression(beta[paste("c,",1,",",1)]), 
                   "alpha_1[1,2]" = expression(beta[paste("c,",1,",",2)]),"alpha_1[2,1]" = expression(beta[paste("s,",1,",",1)]),"alpha_1[2,2]" = expression(beta[paste("s,",1,",",2)]),
@@ -952,7 +947,7 @@ stan_ac_label(object=fit_state_obs_5,pars = pars,label_set = label_func) # stan_
 
 ## Posterior Distributions
 
-```{r echo=FALSE,fig.height=4}
+```{r echo=FALSE,out.width = '85%'}
 stan_plot(fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T, ci_level = 0.95, outer_level=1.00, show_outer_line =T,
           pars = c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]","alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]","alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")) + 
   scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]), 
@@ -1050,15 +1045,22 @@ data_frame(p = c(1,2,3,4,5,6,7,8,9,10),
 
 ## Off Topic
 
-- `rstan` uses `ggplot2`, so you change the option
+- `rstan` uses `ggplot2`, so you change the option easily
 
 ```{r eval=FALSE}
-stan_plot(fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T, ci_level = 0.95, outer_level=1.00, show_outer_line =T,
-          pars = c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]","alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]","alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")) + 
-  scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]), 
-                                    expression(beta[paste("c,",1,",",2)]),expression(beta[paste("s,",1,",",1)]),expression(beta[paste("s,",1,",",2)]),
-                                    expression(beta[paste("c,",2,",",1)]),expression(beta[paste("c,",2,",",2)]),expression(beta[paste("s,",2,",",1)]),
-                                    expression(beta[paste("s,",2,",",2)]))), breaks = 1:10)
+stan_plot(
+  fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T, 
+  ci_level = 0.95, outer_level=1.00, show_outer_line =T,
+  pars = c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]",
+            "alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]",
+            "alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")) + 
+  scale_y_continuous(
+    labels= c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),
+              expression(beta[paste("c,",1,",",1)]),expression(beta[paste("c,",1,",",2)]),
+              expression(beta[paste("s,",1,",",1)]),expression(beta[paste("s,",1,",",2)]),
+              expression(beta[paste("c,",2,",",1)]),expression(beta[paste("c,",2,",",2)]),
+              expression(beta[paste("s,",2,",",1)]),expression(beta[paste("s,",2,",",2)])) %>% 
+      rev(), breaks = 1:10) 
 ```
 
 ## Summary
