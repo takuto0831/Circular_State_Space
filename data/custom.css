@@ -1,0 +1,28 @@
+.reveal .slides section .no-column {
+  width: 96%;
+}
+.reveal .slides section .column1 {
+  float: left;
+  width: 48%;
+}
+.reveal .slides section .column2 {
+  float: right;
+  width: 48%;
+}
+
+.reveal .slides section .column3 {
+  float: left;
+  width: 68%;
+}
+.reveal .slides section .column4 {
+  float: right;
+  width: 28%;
+}
+
+.reveal .slides section .back1 {
+  background-image: url(face.png);
+}
+
+.reveal .slides section .text1 {
+  font-size: 2.0em;
+}
