@@ -18,3 +18,7 @@
   float: right;
   width: 28%;
 }
+
+.reveal .slides section .back1 {
+  background-image: url(face.png);
+}
