@@ -78,7 +78,7 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 
 4. Apply the AR model on the Circular data
 
-5. Build a regressive model based on the Circular data
+5. Build a Autoregressive model based on the Circular data
 
 6. Analysis for wind direction data
 
@@ -91,11 +91,13 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 
 - Twitter: [airspace_nobo](https://www.inosho.info/濃菜麺-井の庄/)
 
-- Affiliation: Graduate School of Engineering, Tokyo University of Science
+- Affiliation: Graduate School of Engineering
 
 - Major: Time series analysis
 
 - Hobby: Shogi, Bouldering
+
+- Favorite `ggplot2` theme : **theme_classic**
 </div>
 
 <div class="column2">
@@ -113,9 +115,20 @@ knitr::include_graphics("data/hongkong.png")
 
 ## Why did I come here ? 
 
-- I casually applied for it, but it's the gathering of great peaple...
+- Thorough my research, I will introduce you that various things can be done in **rstan** !!!!
 
-- Like everyone, I also want to listen to about Mr. Hadley's story, so stay with me for about 15 minutes.
+<div class="column1">
+```{r, echo=FALSE, out.width = '75%'}
+knitr::include_graphics("data/ecosta1.png")
+```
+</div>
+
+<div class="column2">
+```{r, echo=FALSE, out.width = '75%'}
+knitr::include_graphics("data/ecosta2.png")
+```
+</div>
+
 
 # Circular Package and Circular statistics
 
@@ -125,15 +138,13 @@ knitr::include_graphics("data/hongkong.png")
  
 - The usual summary statistics, such as the sample mean and standard deviation, cannot be used with angular values.
 
-- The average of the angular values $1$ and $359$ is $0$ not $\pi$.
-
 ```{r include=FALSE}
 set.seed(831)
 ```
 
 ## Circular plot
 
-- We use `circular` package
+- Use `circular` package
 
 ```{r fig.height=4}
 x <- circular(data.frame(runif(100,0,pi/2))) 
@@ -143,9 +154,9 @@ rose.diag(x,main = "rose diagrame")
 hist(x %>% as.vector(), main = "Histogram",xlab=expression(theta))
 ```
 
-## Circular plot by ggplot
+## Circular plot
 
-- Of course, `ggplot` can do it...
+- Of course, `ggplot` can do it and beautiful...
 
 ```{r fig.height=4}
 x <- data.frame(theta = runif(100,0,pi/2))
@@ -160,7 +171,7 @@ ggplot(x, aes(x =theta)) +
 
 ## Circular mean direction
 
-- We consider the average of the two radians $\pi/3$ and $\pi/5$ (black line)
+- The average of the two radians $\pi/3$ and $\pi/5$ (black line)
 - Arithmetic average is red line, circular mean direction is blue line
 
 <div class="column3">
@@ -182,18 +193,24 @@ mean.circular(y)
 
 ## Circular Standard Deviation
 
-- circular standard deviation is defined by $$\sqrt{-2 \log(\mbox{mean resultant length})}$$
+- circular standard deviation is defined by $\sqrt{-2 \log(R)}$, $R$ means "mean resultant length"
 
-```{r}
-x <- runif(100,0,pi/2) # data
+<div class="column1">
+```{r, echo=FALSE,  out.width = '100%'}
+knitr::include_graphics("data/variance.png")
 ```
+</div>
 
+<div class="column2">
 ```{r}
+# same data
+x <- runif(1000,0,2*pi) 
 # normal standard deviation
 sd(x) 
 # circular standard deviation
 sd.circular(circular(x)) 
 ```
+</div>
 
 ## Circular RMSE
 
@@ -213,7 +230,7 @@ $$
 
 ## Circular RMSE with plot
 
-- Difference betweeen $\frac{11 \pi}{6}$ and $\frac{\pi}{3}$ is not $\frac{3\pi}{2}$ but $\frac{\pi}{2}$ !!
+- Difference betweeen $\frac{11 \pi}{6}$ and $\frac{\pi}{3}$ is not $\frac{3\pi}{2}$ but **$\frac{\pi}{2}$** !!
 
 ```{r, echo=FALSE, out.width = '75%'}
 knitr::include_graphics("data/dif.png")
@@ -221,15 +238,11 @@ knitr::include_graphics("data/dif.png")
 
 ## Circular test
 
-```{r}
-rayleigh.test(x) # 角度データに偏りがあるか
-kuiper.test(x) # Whether Circular data follows von Mises distribution
-watson.wheeler.test(list(x,x)) # ??
-```
+- Rayleigh test : Whether the angle data is biased ...
 
-## Circular-Linear Regresseion
+- Kupier test : Whether angle data follow the von Mises distribution ...
 
-## Circular-Circular Regresseion
+- Mardia-Watoson-Wheeler test : Whether the angle data of the two groups follow the same distribution ...
 
 # Autoegressive model (AR model)
 
@@ -254,13 +267,13 @@ $$ y_t|y_{t-1},...,y_{t-p} \sim \mathcal{N}(c + \sum_{i=1}^p \phi_i y_{t-i},~\si
 $$
 \begin{eqnarray*}
 \mathcal{L} &=& \log f(y_1, y_2, ...|c, \phi_i, \varepsilon) \\ 
-&=& \log f(y_{1+p}|y_{p},...,y_{1}) + ... + \log f(y_{n}|y_{n-1},...,y_{n-p})
+&=& \log f(y_{1+p}|y_{p},...,y_{1}) + ... + \log f(y_{n}|y_{n-1},...,y_{n-p}).
 \end{eqnarray*}
 $$
 
 ## Parameter estimation method
 
-- We use MCMC method, and my rstan code (AR($p$) model) as below,
+- My rstan code (AR($p$) model)
 
 ```
 data{
@@ -316,7 +329,20 @@ data.frame(lh) %>%
     geom_line()
 ```
 
-## Estimate AR($3$) model parameters
+## MCMC settings
+
+- $1000$ warm up, $1000$ iteration, $4$ chains
+
+```{r eval=FALSE}
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+
+ar2_model <- readRDS("model/circular_AR2.rds") # complie model
+fit3 <- sampling(ar2_model,data = list(N=length(lh),P=3,theta=lh),
+                 iter=2000, chains=4) # sampling by model
+```
+
+## Select AR($3$) model by WAIC
 
 ```{r,echo= FALSE,eval=FALSE}
 # fit data 作成コード
@@ -391,7 +417,7 @@ data.frame(real=as.vector(lh),pred) %>%
 </div>
 
 <div class="column4">
-
+<br>
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7),
            WAIC = c(64.6,63.8,63.7,65.2,66.4,65.4,65.4),
@@ -399,8 +425,25 @@ data_frame(p = c(1,2,3,4,5,6,7),
   formattable::formattable(list(WAIC = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA)),
                                 RMSE = formatter("span",style = x ~ ifelse(x == min(x), style(color = "blue", font.weight = "bold"), NA))))
 ```
-
 </div>
+
+## Autocorrelation of Markov Chains
+
+```{r echo=FALSE,fig.height=4}
+pars <- c("alpha_0","alpha_1[1]","alpha_1[2]","alpha_1[3]","sigma")
+label_set <- list("alpha_0[1]" = expression(c),"alpha_1[1]" = expression(phi[1]), "alpha_1[2]" = expression(phi[2]),
+                  "alpha_1[3]" = expression(phi[3]),"sigma" = expression(sigma))
+label_func <- function(variable, value) return(label_set[value]) # label func
+stan_ac_label(object=fit3,pars = pars,label_set = label_func) # stan_ac plot with arbitrary faaet_wrap label
+```
+
+## Posterior Distributions
+
+```{r echo=FALSE,fig.height=4}
+stan_plot(fit3,fill_color ="blue",point_est ="median",show_density=T, ci_level = 0.95, outer_level=1.00, show_outer_line =T,
+          pars = c("alpha_0","alpha_1[1]","alpha_1[2]","alpha_1[3]","sigma")) + 
+  scale_y_continuous(labels = rev(c(expression(c),expression(phi[1]),expression(phi[2]),expression(phi[3]),expression(sigma))), breaks = 1:5)
+```
 
 # Apply the Autoregressive model to the Circular data 
 
@@ -419,11 +462,35 @@ wind_data <- wind %>%
 
 wind_data %>% 
   ggplot(aes(theta_real)) +
-  geom_histogram(binwidth = 0.2, colour = "black", fill = "grey") + 
+  geom_histogram(binwidth = 0.2, colour = "black", fill = "skyblue") + 
   labs(x="Wind directions in dadians")
 ```
 
-## Apply the Autoregressive model
+## Preprovessing and MCMC settings
+
+- change the domain of $\theta$ and make a data list for MCMC
+
+```{r eval=FALSE}
+data(wind) 
+wind_data <- wind %>%  
+  data.frame(t = seq(1,310,1), tmp=.) %>% # put label
+  mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
+  dplyr::select(-tmp) 
+d.dat7 <- list(N=length(wind_data$theta_real), 
+               P=7,theta=wind_data$theta_real) # data list
+```
+
+- $1000$ warm up, $1000$ iteration, $4$ chains
+
+```{r eval=FALSE}
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+
+ar2_model <- readRDS("model/circular_AR2.rds") # complie model
+fit_ar_7 <- sampling(ar_model,data = d.dat7, iter=2000, chains=4)# sampling by model
+```
+
+##  Select AR($7$) model by WAIC
 
 - $\hat{R} < 1.01$ indicate all parameters convergence
 - but fitting is wrong ...
@@ -510,7 +577,7 @@ data.frame(real=wind_data$theta_real,pred) %>%
 </div>
 
 <div class="column4">
-
+<br>
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7),
            WAIC = c(890.1,888.2,888.8, 889.8,885.2,888.3,882.5),
@@ -520,9 +587,30 @@ data_frame(p = c(1,2,3,4,5,6,7),
 ```
 </div>
 
-# Build a Auto Regressive model based on the Circular data
+# Build a Autoregressive model based on the Circular 
 
-## Circular Vector Autoregressive model
+## State-space model
+
+```{r, echo=FALSE, out.width = '90%'}
+knitr::include_graphics("data/obs_state_model.png")
+```
+
+$$\mu_t = \left(
+  \begin{array}{c}
+    \cos \theta_t \\
+    \sin \theta_t
+  \end{array}
+\right), ~~ \theta_t \sim \mathcal{PN}(\mu_t, \sum)$$
+
+## $\mathcal{PN}$ distribution
+
+- **If rstan, you can decsribe a distribution that you don't understand**
+
+```{r, echo=FALSE, out.width = '90%'}
+knitr::include_graphics("data/stan1.png")
+```
+
+## Circular State-space model
 
 $$
 \left(
@@ -607,6 +695,184 @@ N
 \right)
 $$
 
+## Circular State-space model
+
+<div class="back1">
+$$
+\left(
+  \begin{array}{c}
+    \cos \theta_t \\
+    \sin \theta_t
+  \end{array}
+\right) =
+\left(
+  \begin{array}{c}
+    \alpha_{c,0} \\
+    \alpha_{s,0}
+  \end{array} 
+\right) +
+\left(
+  \begin{array}{cc}
+    \beta_{c,1,1} & \beta_{c,1,2} \\
+    \beta_{s,1,1} & \beta_{s,1,2}
+  \end{array}
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-1} \\
+    \sin \theta_{t-1}
+  \end{array} 
+\right) \\ +
+\left(
+  \begin{array}{cc}
+    \beta_{c,2,1} & \beta_{c,2,2} \\
+    \beta_{s,2,1} & \beta_{s,2,2}
+  \end{array} 
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-2} \\
+    \sin \theta_{t-2}
+  \end{array} 
+\right) + \cdots + \\ 
+\left(
+  \begin{array}{cc}
+    \beta_{c,p,1} & \beta_{c,p,2} \\
+    \beta_{s,p,1} & \beta_{s,p,2}
+  \end{array}
+\right)
+\left(
+  \begin{array}{c}
+    \cos \theta_{t-p} \\
+    \sin \theta_{t-p}
+  \end{array} 
+\right) +
+\left(  
+  \begin{array}{c}
+    \varepsilon_{c,t} \\
+    \varepsilon_{s,t}
+  \end{array}
+\right)
+$$ 
+
+where $\boldsymbol{\alpha}, \boldsymbol{\beta}$ is coefficient parameters and $\boldsymbol{\varepsilon}$ is variance parameter.
+
+$$
+\left(
+  \begin{array}{c}
+    \varepsilon_{c,t} \\
+    \varepsilon_{s,t}
+  \end{array} 
+\right) \sim 
+N 
+\left(
+  \left(
+    \begin{array}{c}
+      0 \\
+      0
+    \end{array}
+  \right),
+  \left(
+    \begin{array}{cc}
+      \sigma_c^2 & \rho \sigma_c \sigma_s \\
+      \rho \sigma_c \sigma_s & \sigma_s^2
+    \end{array}
+  \right)
+\right)
+$$
+</div>
+
+## Circular State-space model
+
+- **Easy to write if rstan**
+
+```{r, echo=FALSE, out.width = '90%'}
+knitr::include_graphics("data/stan2.png")
+```
+
+## MCMC code for Circular State-space model 
+
+```
+functions{
+  // state model
+  real circular_state_lpdf(vector u, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
+    vector[2*P] tmp; vector[2] mu; real p;
+    for(k in 1:P){
+      tmp[2*k-1] = cos(pre_theta[k]); 
+      tmp[2*k] = sin(pre_theta[k]);
+    }
+    mu = alpha_0 + ( alpha_1 * tmp); 
+    p = multi_normal_lpdf(u|mu,sigma);
+    return p;
+  }
+  // observation model
+  real circular_obs_lpdf(real theta, int P, vector pre_theta, vector alpha_0, matrix alpha_1, matrix sigma){
+    vector[2] u; vector[2] mu; vector[2*P] tmp; 
+    real A; real B; real C; real D; real p;
+    for(k in 1:P){
+      tmp[2*k-1] = cos(pre_theta[k]); 
+      tmp[2*k] = sin(pre_theta[k]);
+    }
+    mu = alpha_0 + ( alpha_1 * tmp); 
+    u[1] = cos(theta); u[2] = sin(theta);
+    A = quad_form(inverse_spd(sigma), u); B = u' * inverse_spd(sigma) * mu;
+    C = (-0.5) * quad_form(inverse_spd(sigma), mu); D = B/sqrt(A);
+    p = - log(A) - 0.5*log(determinant(sigma)) + C + log(1+(D * (normal_cdf(D,0,1)/ (exp(-D^2 /2)/sqrt(2*pi()))))); 
+    return p;
+  }
+}
+
+data{
+  // data paramter
+  int N; // sample size
+  int P; // VAR(P) 
+  vector<lower=-pi(),upper=pi()>[N] theta; // data
+}
+
+transformed data{
+  vector[2] u[N];
+  for(k in 1:N){
+    u[k,1] = cos(theta[k]);
+    u[k,2] = sin(theta[k]);
+  }
+}
+
+parameters{
+  vector[2] alpha_0;
+  matrix[2,2*P] alpha_1;
+  cov_matrix[2] sigma;
+}
+
+model{
+  alpha_0[1] ~ normal(0,100); alpha_0[2] ~ normal(0,100);
+  for(i in 1:2*P){
+    alpha_1[1,i] ~ normal(0,100); // N(0,100)
+    alpha_1[2,i] ~ normal(0,100); // N(0,100)
+  }
+  sigma ~ inv_wishart(4,diag_matrix(rep_vector(1,2)));
+  for(n in (1+P):N){
+    vector[P] pre_theta;
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    target += circular_state_lpdf(u[n]|P,pre_theta, alpha_0,alpha_1,sigma);
+    target += circular_obs_lpdf(theta[n]|P,pre_theta,alpha_0,alpha_1,sigma);
+  }
+}
+
+generated quantities{
+  vector[N-P] log_likelihood;
+  for(n in (1+P):N){
+    vector[P] pre_theta;
+    for(k in 1:P){
+      pre_theta[k] = theta[n-k];
+    }
+    log_likelihood[n-P] = circular_state_lpdf(u[n]|P,pre_theta, alpha_0,alpha_1,sigma) + 
+                          circular_obs_lpdf(theta[n]|P, pre_theta, alpha_0, alpha_1, sigma);
+  } 
+}
+```
+
 # Analysis for wind direction data
 
 ## Wind Direction in Col de la Roa
@@ -624,7 +890,7 @@ wind_data <- wind %>%
 
 wind_data %>% 
   ggplot(aes(theta_real)) +
-  geom_histogram(binwidth = 0.2, colour = "black", fill = "grey") + 
+  geom_histogram(binwidth = 0.2, colour = "black", fill = "skyblue") + 
   labs(x="Wind directions in dadians")
 ```
 
@@ -642,9 +908,31 @@ d.dat9 <- list(N=length(wind_data$theta_real),P=9,theta=wind_data$theta_real) # 
 d.dat10 <- list(N=length(wind_data$theta_real),P=10,theta=wind_data$theta_real) # for VAR(10)
 ```
 
-## Autocorrelation of Markov Chains
+## Preprovessing and MCMC settings
 
-- parameterの自己相関を一部確認 
+- change the domain of $\theta$ and make a data list for MCMC
+
+```{r eval=FALSE}
+data(wind) 
+wind_data <- wind %>%  
+  data.frame(t = seq(1,310,1), tmp=.) %>% # put label
+  mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
+  dplyr::select(-tmp) 
+d.dat5 <- list(N=length(wind_data$theta_real),
+               P=5,theta=wind_data$theta_real) # data list
+```
+
+- $1000$ warm up, $4000$ iteration, $4$ chains
+
+```{r eval=FALSE}
+rstan_options(auto_write=TRUE) # auto save
+options(mc.cores=parallel::detectCores()) # multi core
+
+state_obs_model <- readRDS("model/state_obs_circular_VAR.rds") # complie model
+fit_state_obs_5 <- sampling(state_obs_model,data = d.dat5, iter=5000, chains=4) # sampling by model
+```
+
+## Autocorrelation of Markov Chains
 
 ```{r include=FALSE}
 load("fit/CircularVAR_5.rda", verbose = TRUE) # load fit
@@ -662,8 +950,6 @@ stan_ac_label(object=fit_state_obs_5,pars = pars,label_set = label_func) # stan_
 
 ## Posterior Distributions
 
-- paraeter の事後分布を一部確認
-
 ```{r echo=FALSE,fig.height=4}
 stan_plot(fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T, ci_level = 0.95, outer_level=1.00, show_outer_line =T,
           pars = c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]","alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]","alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")) + 
@@ -673,7 +959,7 @@ stan_plot(fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T,
                                     expression(beta[paste("s,",2,",",2)]))), breaks = 1:10)
 ```
 
-## Apply the Circular-VAR model
+##  Select Circular State-space model($5$) model by WAIC
 
 - $\hat{R} < 1.01$ indicate all parameters convergence
 
@@ -745,13 +1031,12 @@ pred_value(fit = fit_state_obs_10,p = 10,dat=wind_data$theta_real)
 ```
 
 <div class="column3">
-```{r echo=FALSE,fig.height=4}
+```{r echo=FALSE}
 pred_value(fit = fit_state_obs_5,p = 5,dat=wind_data$theta_real,dif = FALSE)
 ```
 </div>
 
 <div class="column4">
-
 ```{r echo=FALSE}
 data_frame(p = c(1,2,3,4,5,6,7,8,9,10),
            WAIC = c(444.2,442.5,435.0,436.6,431.9,437.4,449.6,456.4,466.6,461.3),
@@ -761,9 +1046,38 @@ data_frame(p = c(1,2,3,4,5,6,7,8,9,10),
 ```
 </div>
 
+## Off Topic
+
+- `rstan` uses `ggplot2`, so you change the option
+
+```{r eval=FALSE}
+stan_plot(fit_state_obs_5,fill_color ="blue",point_est ="median",show_density=T, ci_level = 0.95, outer_level=1.00, show_outer_line =T,
+          pars = c("alpha_0[1]","alpha_0[2]","alpha_1[1,1]","alpha_1[1,2]","alpha_1[2,1]","alpha_1[2,2]","alpha_1[1,3]","alpha_1[1,4]","alpha_1[2,3]","alpha_1[2,4]")) + 
+  scale_y_continuous(labels = rev(c(expression(alpha[paste("c,",0)]),expression(alpha[paste("s,",0)]),expression(beta[paste("c,",1,",",1)]), 
+                                    expression(beta[paste("c,",1,",",2)]),expression(beta[paste("s,",1,",",1)]),expression(beta[paste("s,",1,",",2)]),
+                                    expression(beta[paste("c,",2,",",1)]),expression(beta[paste("c,",2,",",2)]),expression(beta[paste("s,",2,",",1)]),
+                                    expression(beta[paste("s,",2,",",2)]))), breaks = 1:10)
+```
+
 ## Summary
 
-- We get the model...
+<div class="text1">
+
+- Amazing *ggplot2* !! 
+
+- Fantastic *facet_zoom* !!
+
+- Useful *reveal.js* !!
+
+</div>
+
+## 
+
+<div class="text1">
+**Thank you for listening !!**
+
+**Enjoy!**
+</div>
 
 # Appendix
 
@@ -789,31 +1103,5 @@ p(\theta|\mu, \Sigma) = \frac{1}{2\pi A(\theta)} |\Sigma|^{-\frac{1}{2}}
 \end{eqnarray*}
 $$
 
-
 where $u^T = (\cos\theta,\sin\theta), A(\theta) =  u^T\Sigma^{-1} u, \ B(\theta) =  u^T \Sigma^{-1} \mu$ and $\ C = -\frac{1}{2} \mu^T \Sigma^{-1} \mu$. $\Phi(\cdot), \varphi(\cdot)$ are the standard normal distribution and density functions.
-
-## table sample
-
-- we calculate WAIC and RMSE
-
-```{r echo=FALSE,eval=FALSE}
-DT::datatable(data_frame(WAIC = c(1,2,3,4,5,6,7,8,9,0),
-                         RMSE = c(1,2,3,4,5,6,7,8,9,0)),
-              rownames = TRUE,
-              colnames = c('p'=1),
-              filter = "none",
-              escape = FALSE,
-              extensions = 'Scroller',
-              options=list(pageLength=5,deferRender = TRUE,
-                           dom = "frtiS",scrollY = 200,scrollCollapse = TRUE)) 
-```
-
-
-
-
-
-
-
-
-
 
