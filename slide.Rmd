@@ -2,7 +2,7 @@
 title: "How to predict the wind direction of tomorrow"
 subtitle: "Tokyo.R #71"
 date: "15 July 2018"
-author: "Takuto Kotsubo"
+author: "Takuto Kotsubo @airspace_nobo"
 output:
   revealjs::revealjs_presentation:
     transition: slide
@@ -83,6 +83,12 @@ theme_set(theme_classic(base_size = 14,base_family = "Helvetica"))
 6. Analysis for the wind direction data
 
 # Introduction
+
+## Who are you ?
+
+```{r, echo=FALSE,out.width = '85%'}
+knitr::include_graphics("data/tokyor.png")
+```
 
 ## My profile
 
