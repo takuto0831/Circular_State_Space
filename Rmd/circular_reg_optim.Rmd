@@ -1,0 +1,263 @@
+---
+title: "Projected Normal"
+author: "塩濱敬之"
+date: "2018/5/29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r junbi, message=FALSE}
+rm(list=ls())
+setwd("~/Desktop/circular_reg/") #
+library(dplyr)
+library(tidyverse)
+library(tibble)
+library(pipeR)
+library(lubridate)
+library(circular)
+library(readr)
+library(ggplot2)
+library(ggthemes)
+library(vars)
+library(MASS)
+library(DT)
+```
+
+# データの準備
+
+```{r data}
+# dataset we report the wind direction recorded every day from January 29, 2001 to March 31, 2001 from 3.00am to 4.00am included.
+# 角度データなので, 周期性を考えて, 0がモード付近になるようにシフトさせる. 元データから$-\pi$ずらして, $[-\pi,\pi]$で考える.
+data(wind) 
+wind_data <- wind %>%  
+  data.frame(t = seq(1,310,1), tmp=.) %>% # put label
+  mutate(theta_real = dplyr::if_else(tmp>pi,tmp - 2*pi, tmp)) %>% 
+  dplyr::select(-tmp) %>% 
+  mutate(cos_real = cos(theta_real), sin_real=sin(theta_real))
+```
+
+```{r hist}
+hist(wind_data$theta_real)
+```
+
+# likelihood function
+
+* Projected Normal AutoRegressive Process (p=1)
+
+```{r likelihood}
+# Projected Normal AutoRegressive Process
+l <- function(arg){
+ num <- length(data)
+ a0 <- arg[1]; b0 <- arg[4];
+ a11 <- arg[2]; a12 <- arg[3]
+ b11 <- arg[5]; b12 <- arg[6]
+ sigma1 <- exp(arg[7]) # 非負値
+ sigma2 <- exp(arg[8]) # 非負値
+ rho <- tanh(arg[9]) # 数値を-1 ~ 1に抑え込む
+ Sig <- matrix(c(sigma1^2, rho*sigma1*sigma2,rho*sigma1*sigma2, sigma2^2 ),2,2)
+ likelihood <- c(0)
+ for(i in 2:num){
+   u = matrix(c(cos(data[i]),sin(data[i])),ncol=1)
+   mu = matrix(c(a0,b0), ncol=1) + matrix(c(a11,b11, a12,b12), ncol=2, nrow=2) %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)
+   A = t(u) %*% solve(Sig) %*% u
+   B = t(u) %*% solve(Sig) %*% mu
+   C = (-1/2) * (t(mu) %*% solve(Sig) %*% mu)
+   tmp = B/sqrt(A)
+   # 尤度を計算する
+   likelihood <- append(likelihood,
+                        -log(A) - 0.5*log(det(Sig)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))))
+ }
+ # print(solve(Sig)) #debug用
+ # print(pnorm(tmp,0,1)/dnorm(tmp,0,1)) #debug用
+ - sum(likelihood) # -1を乗じることで, 最大化問題を最小化問題にする.
+}
+
+l_pena <- function(arg){
+ num <- length(data)
+ a0 <- arg[1]; b0 <- arg[4];
+ a11 <- arg[2]; a12 <- arg[3]
+ b11 <- arg[5]; b12 <- arg[6]
+ sigma1 <- exp(arg[7]) # 非負値
+ sigma2 <- exp(arg[8]) # 非負値
+ rho <- tanh(arg[9]) # 数値を-1 ~ 1に抑え込む
+ Sig <- matrix(c(sigma1^2, rho*sigma1*sigma2,rho*sigma1*sigma2, sigma2^2 ),2,2)
+ likelihood <- c(0)
+ for(i in 2:num){
+   u = matrix(c(cos(data[i]),sin(data[i])),ncol=1)
+   mu = matrix(c(a0,b0), ncol=1) + matrix(c(a11,b11, a12,b12), ncol=2, nrow=2) %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)
+   A = t(u) %*% solve(Sig) %*% u
+   B = t(u) %*% solve(Sig) %*% mu
+   C = (-1/2) * (t(mu) %*% solve(Sig) %*% mu)
+   tmp = B/sqrt(A)
+   # 尤度を計算する
+   likelihood <- append(likelihood,
+                        -log(A) - 0.5*log(det(Sig)) + C + log(1+(tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1))) - 0.01 * (t(mu) %*% mu - 1)^2)
+ }
+ # print(solve(Sig)) #debug用
+ # print(pnorm(tmp,0,1)/dnorm(tmp,0,1)) #debug用
+ - sum(likelihood) # -1を乗じることで, 最大化問題を最小化問題にする.
+}
+```
+
+# out put funcitons
+
+```{r}
+# conditional mean
+cond.mean <- function(par, data){
+ num<-length(data)
+ a0 <- par[1]
+ a11 <- par[2]
+ a12 <- par[3]
+ b0 <- par[4]
+ b11 <- par[5]
+ b12 <- par[6]
+ mu<- matrix(0, ncol=2, nrow=(num-1) )
+ for(i in 2:num){
+   u = matrix(c(cos(data[i]),sin(data[i])),ncol=1)
+   mu[(i-1),] = matrix(c(a0,b0), ncol=1) + 
+     matrix(c(a11,b11, a12,b12), ncol=2, nrow=2) %*% matrix(c(cos(data[i-1]),sin(data[i-1])),ncol=1)}
+ return(mu)
+}
+
+dPnCircular_dens <- function(theta,mu,Sigma){
+ #print(theta)
+ u = matrix(c(cos(theta),sin(theta)),ncol=1)
+ #print(u)
+ #print(Sigma)
+ A = t(u) %*% solve(Sigma) %*% u
+ B = t(u) %*% solve(Sigma) %*% mu
+ C = (-1/2) * (t(mu) %*% solve(Sigma) %*% mu)
+ tmp = B/sqrt(A)
+ p = as.numeric((1/(2*pi*A*sqrt(det(Sigma)))) * exp(C) *
+   (1 + tmp*pnorm(tmp,0,1)/dnorm(tmp,0,1)))
+ return(p)
+}
+
+v.dPnCircular_dens <- Vectorize(dPnCircular_dens, "theta") 
+
+trigonometric.moment <-function(mu,Sigma){
+  fn.sin<-function(x,mu,Sigma) sin(x)*v.dPnCircular_dens(theta=x, mu, Sigma) # sin(theta) * 確率??
+  fn.cos<-function(x,mu,Sigma) cos(x)*v.dPnCircular_dens(theta=x, mu, Sigma)
+  num<- dim(mu)[1]
+  sin.mom <- cos.mom <- 0;
+  for(i in 1:num){
+   sin.mom[i] <- integrate(fn.sin, lower=-pi, upper=pi,
+                           mu=mu[i,], Sigma=Sigma)$value
+   cos.mom[i] <- integrate(fn.cos, lower=-pi, upper=pi,
+                           mu=mu[i,], Sigma=Sigma)$value
+  }
+  pred <- atan2(sin.mom,cos.mom)
+  return(pred)
+}
+```
+
+適当な初期値を入れて尤度が計算できるのか確認
+
+```{r}
+#初期値の目安はcircular-circular regressionで
+lm.out <- lm.circular(y=wind_data$theta_real[-1], x=wind_data$theta_real[-310],order=1 )
+par <- c(lm.out$coefficients[,1], 
+         lm.out$coefficients[,2],
+         log(var(cos(lm.out$residuals))), # 不偏分散 cos
+         log(var(sin(lm.out$residuals))), # 不偏分散 sin
+         atanh(cor(cos(lm.out$residuals),sin(lm.out$residuals)))) #相関係数
+data=wind_data$theta_real
+l(par) #尤度
+l_pena(par)
+```
+
+## solnp 関数
+
+問題点
+
+- sigma1, sigma2が爆発的に増加する.
+- 制約で抑え込む必要ある.
+
+```{r solnp}
+library(Rsolnp)
+# 不等式制約 
+inequalityConstraint <- function(par){ par }; 
+ineq.lower <-c(-10,-10,-10,-10,-10,-10,-10,-10,-10); 
+ineq.upper <- c(10,10,10,10,10,10,10,10,10)
+# データ
+data = wind_data$theta_real
+# 最適化
+solution <- solnp(par, fun = l,ineqfun = inequalityConstraint, ineqLB =ineq.lower,ineqUB = ineq.upper)
+```
+
+## 結果
+
+```{r}
+mu.hat <- cond.mean(par= solution$pars, data= wind_data$theta_real)
+Sig <- matrix( c( solution$pars[7]^2, solution$pars[7]*solution$pars[8]*solution$pars[9],
+                  solution$pars[7]*solution$pars[8]*solution$pars[9], solution$pars[8]^2), ncol=2, nrow=2)
+solution$pars
+Sig
+```
+
+```{r prediction plot solnp}
+mu.pred <- trigonometric.moment(mu=mu.hat,Sigma=Sig)
+matplot(cbind(wind_data$theta_real[-c(1:1)], mu.pred),type="l")
+```
+
+## optim 関数
+
+制約を入れないで最適化
+
+```{r optimization1}
+data = wind_data$theta_real
+fit <- optim(par, l, control=list(maxit=20000))
+fit_pena <- optim(par, l_pena, control=list(maxit=20000))
+
+#変換したパラメータをもとに戻す
+fit$par2 <- c(fit$par[1:6],exp(fit$par[7:8]), tanh(fit$par[9])) 
+mu.hat <- cond.mean(par= fit$par2, data= wind_data$theta_real)
+Sig <- matrix( c( fit$par2[7]^2, fit$par2[7]*fit$par2[8]*fit$par2[9],
+                  fit$par2[7]*fit$par2[8]*fit$par2[9], fit$par2[8]^2), ncol=2, nrow=2)
+# 変換したパラメータを元に戻す, 罰則付き関数
+fit_pena$par2 <- c(fit_pena$par[1:6],exp(fit_pena$par[7:8]), tanh(fit_pena$par[9])) 
+mu.hat_ <- cond.mean(par= fit_pena$par2, data= wind_data$theta_real)
+Sig_ <- matrix( c( fit_pena$par2[7]^2, fit_pena$par2[7]*fit_pena$par2[8]*fit_pena$par2[9],
+                  fit_pena$par2[7]*fit_pena$par2[8]*fit_pena$par2[9], fit_pena$par2[8]^2), ncol=2, nrow=2)
+
+```
+
+## 結果
+```{r}
+par
+```
+
+```{r}
+# 罰則なし
+fit
+Sig
+# 罰則付き
+fit_pena # paramter
+Sig_ # 分散共分散行列
+```
+
+predictionを入れてみる.
+sinモーメントとcosモーメントを計算しないといけない.
+
+```{r prediction}
+mu.pred <- trigonometric.moment(mu=mu.hat,Sigma=Sig)
+matplot(cbind(wind_data$theta_real[-c(1:1)], mu.pred),type="l")
+
+mu.pred <- trigonometric.moment(mu=mu.hat_,Sigma=Sig_)
+matplot(cbind(wind_data$theta_real[-c(1:1)], mu.pred),type="l")
+```
+
+一応こんな感じ。
+
+きになるところ.
+
+muの大きさとSigmaの大きさでconcentrationが決まるので,やはり,muのところに制約が必要？
+p次の自己回帰モデルに拡張する。
+モデル選択、
+ベイズ推定、
+推測論、
+仮説検定、
+を急いでメモします。
