@@ -1,3 +1,19 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [circular regression](#circular-regression)
+  - [References](#references)
+  - [purpose](#purpose)
+  - [memo](#memo)
+- [About files](#about-files)
+  - [Rmd file](#rmd-file)
+  - [stan file](#stan-file)
+    - [each codes](#each-codes)
+- [Directrory](#directrory)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # circular regression
 
 - Briefly summarize the circular regression and the circular correlation.
