@@ -18,6 +18,13 @@ We introduce a new approach to a circular time series modeling that based on the
 
 # About files 
 
+## Rmd file
+
+- circular_reg_analysis.Rmd: 気象庁データを活用. 風向データは16方位のため, 角度データに変更を行っている.
+- circular_reg_optim.Rmd : 実データ分析用, optim関数, Rsolnp関数, 制約付き実行可能
+- circular_reg_stan.Rmd: MCMCによる推定, VAR(p) model まで一通り作成
+- circular_reg_sim.Rmd: simulation data 分析用, 作成途中, 要検討
+
 ## stan file
 
 `circularVAR_p_penalty.stan`におけるpenalty function について記載する.
@@ -43,9 +50,9 @@ We introduce a new approach to a circular time series modeling that based on the
 ├── circular_regression.Rproj
 ├── Rmd
 │   ├── circular_reg_analysis.Rmd
-│   ├── circular_reg_optim.Rmd (実データ分析用, optim関数, Rsolnp関数, 制約付き実行可能)
-│   ├── circular_reg_sim.Rmd (simulation data 分析用, 作成途中)
-│   └── circular_reg_stan.Rmd (MCMCによる推定, VAR(p) model まで一通り作成)
+│   ├── circular_reg_optim.Rmd 
+│   ├── circular_reg_sim.Rmd 
+│   └── circular_reg_stan.Rmd
 ├── csv
 │   └── nerima_wind.csv
 ├── model
